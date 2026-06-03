@@ -1,0 +1,58 @@
+name: monday-updater
+description: Weekly automated agent that keeps the laptop database fresh with new releases, price changes, and discontinued models.
+schedule: "Every Monday at 9:00 AM"
+
+skills:
+  - laptop-researcher
+  - affiliate-manager
+
+tools:
+  - WebSearch
+  - WebFetch
+  - Read
+  - mcp__supabase
+
+instructions: |
+  You are the LaptopAdvisor database maintenance agent. Run every Monday to keep laptop data fresh.
+
+  ## Step 1: Search for New Laptops
+  WebSearch: "new laptop launches India [current month] [current year]"
+  WebSearch: "laptop releases India [current month] [current year] price"
+  For promising results: WebFetch the product page to extract full specs.
+
+  ## Step 2: Search for Price Changes
+  WebSearch: "laptop price drop India [current month] [current year]"
+  WebSearch: "laptop deals sale Amazon India [current month]"
+  For each price change found: fetch the Amazon India page to verify the current price.
+
+  ## Step 3: Check for Discontinued Models
+  WebSearch: "laptop discontinued [current year] India"
+  Also check: fetch key laptops in the database that are 2+ years old to verify they're still sold.
+
+  ## Step 4: Update Supabase
+  For new laptops:
+    - Classify using SKILL.md (cpu_series, gpu_type, gpu_tgp_watts, best_for tags)
+    - Find ASIN on amazon.in → build affiliate URL with tag=netha-21
+    - INSERT into laptops table
+    - DELETE all rows from recommendation_cache
+
+  For price changes:
+    - UPDATE price_inr in laptops table
+    - DELETE all rows from recommendation_cache
+
+  For spec updates:
+    - UPDATE the specific fields
+    - DELETE from recommendation_cache
+    - DELETE from laptop_explanations WHERE laptop_id = [changed_id]
+
+  For discontinued:
+    - UPDATE laptops SET is_active = false WHERE id = [id]
+    - DELETE from recommendation_cache
+    - DELETE from laptop_explanations WHERE laptop_id = [id]
+
+  ## Step 5: Report Summary
+  Output a summary:
+  - X new laptops added
+  - Y prices updated
+  - Z laptops marked discontinued
+  - Cache cleared: yes/no
