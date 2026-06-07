@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient } from '@/lib/supabase'
-import { getRecommendations, mapFormToUseCaseTag } from '@/lib/claude'
+import { getRanking, mapFormToUseCaseTag } from '@/lib/claude'
 import { hashFormData } from '@/lib/hash'
 import { checkRateLimit } from '@/lib/rateLimit'
 import { BUDGET_RANGES } from '@/types/laptop'
@@ -32,7 +32,6 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  // Rate limiting
   const ip = getClientIp(req)
   const { allowed, remaining, reset } = await checkRateLimit(ip)
   if (!allowed) {
@@ -49,7 +48,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Parse + validate inputs
   let body: unknown
   try {
     body = await req.json()
@@ -65,7 +63,7 @@ export async function POST(req: NextRequest) {
   const queryHash = hashFormData(form)
   const supabase = getServiceClient()
 
-  // Layer 1: Full query cache check
+  // Layer 1: Full query cache — identical inputs return instantly
   const { data: cached } = await supabase
     .from('recommendation_cache')
     .select('result_json')
@@ -80,7 +78,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Smart pre-filter: budget → OS → use case tag
+  // Smart pre-filter: budget → OS → brand → use-case tag
   const budgetRange = BUDGET_RANGES.find((r) => r.label === form.budget_key)!
   const useCaseTag = mapFormToUseCaseTag(form)
 
@@ -95,7 +93,6 @@ export async function POST(req: NextRequest) {
     query = query.in('os_support', [form.os_preference, 'any'])
   }
 
-  // Brand filter — hard filter when user specifies a brand
   if (form.brand_preference && form.brand_preference !== 'no-preference') {
     query = query.eq('brand', form.brand_preference)
   }
@@ -112,96 +109,72 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Apply use-case tag filter; fallback to all if < 6 results
   let laptopsForClaude = (allFiltered as Laptop[]).filter((l) =>
     l.best_for.includes(useCaseTag)
   )
   if (laptopsForClaude.length < 6) {
     laptopsForClaude = allFiltered as Laptop[]
   }
-
-  // Cap at 15 laptops to control Claude token usage
   laptopsForClaude = laptopsForClaude.slice(0, 15)
 
-  // Layer 2: Check laptop_explanations cache for each laptop
+  // Layer 2: Fetch all cached explanations for these laptops
   const { data: cachedExplanations } = await supabase
     .from('laptop_explanations')
     .select('*')
     .in('laptop_id', laptopsForClaude.map((l) => l.id))
     .eq('use_case', useCaseTag)
 
-  const cachedExplanationMap = new Map(
+  const explanationMap = new Map(
     (cachedExplanations || []).map((e: any) => [e.laptop_id, e])
   )
 
-  // Check if we have explanations for all laptops
-  const allCached = laptopsForClaude.every((l) => cachedExplanationMap.has(l.id))
-
-  let result: RecommendationResult
-  if (allCached) {
-    // All explanations cached — construct response without calling Claude
-    console.log('[/api/recommend] All explanations cached, using cached data')
-    const top3 = laptopsForClaude
-      .slice(0, 3)
-      .map((laptop, idx) => {
-        const cached = cachedExplanationMap.get(laptop.id)!
-        return {
-          rank: (idx + 1) as 1 | 2 | 3,
-          laptop_id: laptop.id,
-          headline: `${laptop.brand} ${laptop.name.split(' ').slice(-2).join(' ')}`,
-          why_best: cached.explanation,
-          key_strengths: cached.key_strengths,
-          one_honest_weakness: cached.one_weakness,
-          buy_confidence: 'High' as const,
-          use_case_fit_score: 8,
-        }
-      })
-
-    result = {
-      top3,
-      generated_at: new Date().toISOString(),
-      from_cache: true,
-    }
-  } else {
-    // Some missing — call Claude
-    let claudeResult
-    try {
-      claudeResult = await getRecommendations(form, laptopsForClaude, budgetRange.label)
-    } catch (err) {
-      console.error('[/api/recommend] Claude call failed:', err)
-      return NextResponse.json(
-        { error: 'AI recommendation failed. Please try again.' },
-        { status: 500 }
-      )
-    }
-
-    result = claudeResult
-
-    // Store new explanations from this result
-    const newExplanations = claudeResult.top3
-      .filter((r) => !cachedExplanationMap.has(r.laptop_id))
-      .map((r) => ({
-        laptop_id: r.laptop_id,
-        use_case: useCaseTag,
-        explanation: r.why_best,
-        key_strengths: r.key_strengths,
-        one_weakness: r.one_honest_weakness,
-        cached_at: new Date().toISOString(),
-      }))
-
-    if (newExplanations.length > 0) {
-      await supabase.from('laptop_explanations').upsert(newExplanations, {
-        onConflict: 'laptop_id,use_case',
-      })
-    }
+  // Claude ALWAYS ranks — it analyzes specs to pick the best 3 for this user.
+  // Cache only provides the explanation text (why it's great), not the ranking decision.
+  let ranking
+  try {
+    ranking = await getRanking(form, laptopsForClaude, budgetRange.label)
+  } catch (err) {
+    console.error('[/api/recommend] Claude ranking failed:', err)
+    // Fallback: order by price fit and use cached explanations
+    ranking = laptopsForClaude.slice(0, 3).map((l, i) => ({
+      rank: (i + 1) as 1 | 2 | 3,
+      laptop_id: l.id,
+      headline: `${l.brand} — solid ${useCaseTag} pick`,
+      buy_confidence: 'Medium' as const,
+      use_case_fit_score: 7,
+    }))
   }
 
-  const responsePayload = {
-    result,
-    query_hash: queryHash,
+  // Merge ranking with cached explanations (or fallback text)
+  const top3 = ranking.slice(0, 3).map((r) => {
+    const laptop = laptopsForClaude.find((l) => l.id === r.laptop_id)!
+    const expl = explanationMap.get(r.laptop_id)
+
+    return {
+      rank: r.rank,
+      laptop_id: r.laptop_id,
+      headline: r.headline,
+      why_best: expl?.explanation ?? `${laptop.name} is a strong match for your needs based on specs.`,
+      key_strengths: expl?.key_strengths ?? [
+        `${laptop.cpu_model} processor`,
+        `${laptop.ram_gb}GB ${laptop.ram_type} RAM`,
+        laptop.gpu_type === 'dedicated' ? `${laptop.gpu_model} @ ${laptop.gpu_tgp_watts}W` : 'Efficient integrated graphics',
+      ],
+      one_honest_weakness: expl?.one_weakness ?? laptop.cons?.split('.')[0] ?? 'Check specs before purchasing',
+      buy_confidence: r.buy_confidence,
+      use_case_fit_score: r.use_case_fit_score,
+    }
+  })
+
+  const result: RecommendationResult = {
+    top3,
+    generated_at: new Date().toISOString(),
+    from_cache: false,
   }
 
-  // Store in recommendation_cache (24h TTL)
+  const responsePayload = { result, query_hash: queryHash }
+
+  // Store full response in cache (24h TTL)
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
   await supabase.from('recommendation_cache').upsert({
     query_hash: queryHash,

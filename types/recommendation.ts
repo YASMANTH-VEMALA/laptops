@@ -47,6 +47,15 @@ export interface RankedLaptop {
   use_case_fit_score: number
 }
 
+// Lean ranking returned by Claude (explanations come from cache)
+export interface RankedLaptopLean {
+  rank: 1 | 2 | 3
+  laptop_id: string
+  headline: string
+  buy_confidence: 'High' | 'Medium'
+  use_case_fit_score: number
+}
+
 export interface RecommendationResult {
   top3: RankedLaptop[]
   generated_at: string

@@ -3,7 +3,7 @@ import type { Laptop } from '@/types/laptop'
 import type {
   RecommendationFormData,
   RecommendationResult,
-  RankedLaptop,
+  RankedLaptopLean,
 } from '@/types/recommendation'
 import { USE_CASE_TO_TAG } from '@/types/recommendation'
 
@@ -61,34 +61,34 @@ function buildUserPrompt(
       os_preference: form.os_preference,
     },
     available_laptops: laptopList,
-    task: 'Rank the top 3 laptops from available_laptops for this user. Return JSON with this exact structure:',
+    task: `Analyze these laptops against the user's needs and RANK the top 3.
+Focus on: their top_priority (${form.top_priority}), primary_use (${form.primary_use}), and budget fit.
+Compare GPU TGP wattages, CPU series (H vs U vs HX), RAM capacity, and display specs against what matters for ${form.primary_use}.
+ONLY return the ranking and headline — do NOT write explanations (those are pre-written separately).`,
     response_schema: {
       top3: [
         {
           rank: '1 | 2 | 3',
-          laptop_id: 'uuid string',
-          headline: 'Short compelling reason (max 8 words)',
-          why_best: 'Detailed 3-4 sentence explanation using specific specs and why they matter for this user',
-          key_strengths: ['strength 1', 'strength 2', 'strength 3'],
-          one_honest_weakness: 'One real limitation of this laptop for this use case',
+          laptop_id: 'uuid string from available_laptops',
+          headline: 'Max 8 words — the single most compelling reason for this user',
           buy_confidence: 'High | Medium',
-          use_case_fit_score: '1-10 integer',
+          use_case_fit_score: '1-10 integer based on how well specs match this use case',
         },
       ],
     },
   })
 }
 
-export async function getRecommendations(
+export async function getRanking(
   form: RecommendationFormData,
   laptops: Laptop[],
   budgetLabel: string
-): Promise<RecommendationResult> {
+): Promise<RankedLaptopLean[]> {
   const client = new Anthropic()
 
   const response = await client.messages.create({
     model: MODEL,
-    max_tokens: 2048,
+    max_tokens: 400,
     system: [
       {
         type: 'text',
@@ -105,24 +105,18 @@ export async function getRecommendations(
   })
 
   const raw = response.content[0].type === 'text' ? response.content[0].text : ''
-
-  // Strip markdown code fences if Claude wraps the JSON (handles any whitespace/newlines)
   const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
   const text = fenceMatch ? fenceMatch[1].trim() : raw.trim()
 
-  let parsed: { top3: RankedLaptop[] }
+  let parsed: { top3: RankedLaptopLean[] }
   try {
-    parsed = JSON.parse(text) as { top3: RankedLaptop[] }
+    parsed = JSON.parse(text) as { top3: RankedLaptopLean[] }
   } catch (err) {
     console.error('[Claude] JSON parse failed. Raw response (first 500 chars):', raw.substring(0, 500))
     throw err
   }
 
-  return {
-    top3: parsed.top3,
-    generated_at: new Date().toISOString(),
-    from_cache: false,
-  }
+  return parsed.top3
 }
 
 export function mapFormToUseCaseTag(form: RecommendationFormData) {
