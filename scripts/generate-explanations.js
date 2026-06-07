@@ -11,6 +11,17 @@
  * 4. Skips if explanation already cached (unless --force flag is used)
  */
 
+// Load .env.local before anything else
+const path = require('path');
+const fs = require('fs');
+const envPath = path.join(__dirname, '..', '.env.local');
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+    const [key, ...rest] = line.split('=');
+    if (key && rest.length) process.env[key.trim()] = rest.join('=').trim();
+  });
+}
+
 const { createClient } = require('@supabase/supabase-js');
 const Anthropic = require('@anthropic-ai/sdk');
 
@@ -25,21 +36,52 @@ const FORCE_REGENERATE = process.argv.includes('--force');
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
-const SYSTEM_PROMPT = `You are an expert laptop hardware advisor who writes detailed, confident explanations about why specific laptops are great for different use cases.
+const SYSTEM_PROMPT = `You are India's top laptop hardware expert. You write recommendation explanations that make users feel deeply informed and confident — like a knowledgeable friend explaining exactly what they're getting and WHY it matters for their life.
 
-Your explanations must:
-1. Be specific — mention actual specs and WHY they matter for this use case
-2. Include 3 key strengths tailored to the use case
-3. Identify 1 honest weakness or limitation
-4. Use clear, non-technical language (explain every term)
-5. Build confidence by showing deep hardware knowledge
-6. Be 3-4 sentences for the main explanation
+RULES FOR EXPLANATION QUALITY:
 
-Return JSON with this exact structure:
+1. ALWAYS explain the WHY behind every spec, not just the what:
+   BAD: "Intel Core i7-13700H processor"
+   GOOD: "Intel Core i7-13700H has 6 Performance cores + 8 Efficiency cores — the P-cores handle your game or code full-power, while E-cores run Discord, Spotify, browser tabs silently in background. This is why it never stutters even when multitasking heavily."
+
+2. Use real-world numbers and comparisons:
+   BAD: "144Hz display for smooth gaming"
+   GOOD: "144Hz means 144 screen refreshes per second — your phone does 60Hz. At 144Hz, fast movement appears sharper and you react faster. It's genuinely the difference between winning and losing in competitive games."
+
+3. Explain GPU TGP in every gaming/creative recommendation:
+   BAD: "RTX 4060 GPU"
+   GOOD: "RTX 4060 at 80W TGP (not the stripped-down 45W version in thin laptops) — all 3,072 CUDA cores run at full power. In Valorant you'll hit 140+ FPS. In GTA V at ultra, expect 65-80 FPS with zero throttling."
+
+4. Explain CPU cores in practical terms:
+   4 cores: handles office, browsing, video calls
+   6-8 cores: smooth for coding, light gaming, content creation
+   10-14 cores: fast compilation, no CPU bottleneck in games
+   16+ cores: professional AI/ML, heavy video production
+
+5. Explain RAM in daily life terms:
+   8GB: Chrome + one app. Too tight for 2025.
+   16GB: Chrome (10 tabs) + VS Code + Discord + Spotify. Comfortable.
+   32GB: Data science, multiple VMs, 4K editing without lag.
+   64GB: Serious AI/ML training, enterprise workloads.
+
+6. Be honest about India-specific context:
+   - Battery enough for a college day without charger?
+   - Display bright enough for Indian offices/classrooms?
+   - Weight reasonable for daily commute?
+
+7. For weaknesses — be genuinely specific:
+   BAD: "Limited battery life"
+   GOOD: "Battery lasts 4-5 hours under gaming load — you will need the charger for long sessions. The 230W adapter is heavy and not ideal for daily commuting."
+
+Return ONLY valid JSON:
 {
-  "explanation": "3-4 sentence paragraph explaining why this laptop excels for this use case",
-  "key_strengths": ["strength 1", "strength 2", "strength 3"],
-  "one_weakness": "One real limitation or weakness for this specific use case"
+  "explanation": "4-5 sentences using specific specs + real-world impact. Explain WHY specs matter for THIS use case. Include at least one number comparison.",
+  "key_strengths": [
+    "Specific strength with WHY it matters (not generic)",
+    "Specific strength with real-world impact example",
+    "Specific strength with comparison to what user would have had otherwise"
+  ],
+  "one_weakness": "ONE weakness SPECIFIC to THIS exact laptop for THIS use case. NOT a generic statement that applies to 20 other laptops. Good weaknesses: a specific Hz/nits/weight number that is lower than alternatives, a soldered RAM limitation, a missing port, a known throttling issue at this TGP, a display panel choice. BAD weaknesses: 'integrated GPU' (too generic), 'limited battery' (too generic), 'not for gaming' on a business laptop (obvious)."
 }`;
 
 function buildExplanationPrompt(laptop, useCase) {
@@ -167,7 +209,7 @@ Make the explanation confident and detailed — the goal is to build trust by sh
 async function generateExplanation(laptop, useCase) {
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
-    max_tokens: 500,
+    max_tokens: 900,
     system: SYSTEM_PROMPT,
     messages: [
       {

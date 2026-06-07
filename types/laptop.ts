@@ -1,6 +1,6 @@
 export type CpuArch = 'x86' | 'ARM'
-export type CpuBrand = 'Intel' | 'AMD' | 'Apple'
-export type CpuSeries = 'U' | 'P' | 'H' | 'HX' | 'M-series'
+export type CpuBrand = 'Intel' | 'AMD' | 'Apple' | 'Qualcomm'
+export type CpuSeries = 'U' | 'P' | 'H' | 'HX' | 'M-series' | 'X-series'
 export type GpuType = 'integrated' | 'dedicated'
 export type DisplayType = 'IPS' | 'OLED' | 'Mini-LED' | 'TN' | 'AMOLED'
 export type RamType = 'LPDDR5X' | 'LPDDR5' | 'DDR5' | 'DDR4'

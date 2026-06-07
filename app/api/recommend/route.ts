@@ -95,11 +95,19 @@ export async function POST(req: NextRequest) {
     query = query.in('os_support', [form.os_preference, 'any'])
   }
 
+  // Brand filter — hard filter when user specifies a brand
+  if (form.brand_preference && form.brand_preference !== 'no-preference') {
+    query = query.eq('brand', form.brand_preference)
+  }
+
   const { data: allFiltered } = await query.order('last_updated', { ascending: false }).limit(50)
 
   if (!allFiltered || allFiltered.length === 0) {
+    const brandMsg = form.brand_preference && form.brand_preference !== 'no-preference'
+      ? ` Try removing the ${form.brand_preference} brand filter.`
+      : ' Try a wider budget.'
     return NextResponse.json(
-      { error: 'No laptops found in this budget range. Try a wider budget.' },
+      { error: `No laptops found in this budget range.${brandMsg}` },
       { status: 404 }
     )
   }

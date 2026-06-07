@@ -101,26 +101,26 @@ export function ResultCard({ ranked, laptop }: ResultCardProps) {
     <Card className="overflow-hidden transition-all duration-200 border-l-4" style={{ borderLeftColor: 'var(--color-accent)' }}>
       {/* Header */}
       <CardHeader className="pb-3">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
           {/* Laptop image */}
-          <div className="relative h-20 w-32 flex-shrink-0 overflow-hidden rounded-md bg-secondary">
+          <div className="relative h-36 w-full sm:h-20 sm:w-32 sm:flex-shrink-0 overflow-hidden rounded-md bg-secondary">
             {laptop.image_url ? (
               <Image
                 src={laptop.image_url}
                 alt={laptop.name}
                 fill
-                className="object-contain p-1"
-                sizes="128px"
+                className="object-contain p-2"
+                sizes="(max-width: 640px) 100vw, 128px"
               />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <Monitor className="h-8 w-8 text-muted-foreground/40" />
+                <Monitor className="h-10 w-10 text-muted-foreground/40" />
               </div>
             )}
           </div>
 
           {/* Title block */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <Badge variant="default" className="text-xs">
                 #{ranked.rank} {cfg.label}

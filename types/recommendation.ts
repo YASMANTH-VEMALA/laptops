@@ -33,6 +33,7 @@ export interface RecommendationFormData {
   budget_key: string
   top_priority: TopPriority
   os_preference: OsPreference
+  brand_preference?: string
 }
 
 export interface RankedLaptop {

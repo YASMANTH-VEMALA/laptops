@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Cpu, Monitor, Battery, DollarSign, Zap } from 'lucide-react'
+import { Loader2, Cpu, Monitor, Battery, DollarSign, Zap, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -18,14 +18,12 @@ import {
   PRIORITY_LABELS,
   OS_LABELS,
   type RecommendationFormData,
-  type UserRole,
-  type PrimaryUse,
-  type TopPriority,
-  type OsPreference,
 } from '@/types/recommendation'
 import { BUDGET_RANGES } from '@/types/laptop'
 
-const FORM_FIELDS = [
+const REQUIRED_FIELDS = ['role', 'primary_use', 'budget_key', 'top_priority', 'os_preference'] as const
+
+const BASE_FORM_FIELDS = [
   {
     key: 'role' as const,
     label: 'Who are you?',
@@ -65,11 +63,24 @@ const FORM_FIELDS = [
 
 export function RecommendationForm() {
   const router = useRouter()
-  const [form, setForm] = useState<Partial<RecommendationFormData>>({})
+  const [form, setForm] = useState<Partial<RecommendationFormData>>({ brand_preference: 'no-preference' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [brands, setBrands] = useState<string[]>([])
 
-  const isComplete = FORM_FIELDS.every((f) => form[f.key])
+  useEffect(() => {
+    fetch('/api/brands')
+      .then((r) => r.json())
+      .then(({ brands }) => setBrands(brands ?? []))
+      .catch(() => {})
+  }, [])
+
+  const brandOptions = [
+    { value: 'no-preference', label: 'No preference — show best overall' },
+    ...brands.map((b) => ({ value: b, label: b })),
+  ]
+
+  const isComplete = REQUIRED_FIELDS.every((f) => form[f])
 
   async function handleSubmit() {
     if (!isComplete) return
@@ -105,7 +116,7 @@ export function RecommendationForm() {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      {FORM_FIELDS.map((field) => (
+      {BASE_FORM_FIELDS.map((field) => (
         <Card key={field.key}>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-start gap-3">
@@ -135,6 +146,40 @@ export function RecommendationForm() {
           </CardContent>
         </Card>
       ))}
+
+      {/* Brand preference — optional, populated dynamically from DB */}
+      {brandOptions.length > 1 && (
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 text-muted-foreground">
+                <Tag className="h-5 w-5" />
+              </div>
+              <div className="flex-1 space-y-2.5">
+                <div>
+                  <p className="font-medium text-sm">Preferred brand? <span className="text-xs font-normal text-muted-foreground ml-1">(Optional)</span></p>
+                  <p className="text-xs text-muted-foreground">Limit to one brand, or let us pick the best across all</p>
+                </div>
+                <Select
+                  value={form.brand_preference ?? 'no-preference'}
+                  onValueChange={(val) => setForm((prev) => ({ ...prev, brand_preference: val ?? undefined }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brandOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {error && (
         <p className="text-sm text-destructive text-center px-4 py-2 rounded-md bg-destructive/10 border border-destructive/20">

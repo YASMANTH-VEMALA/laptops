@@ -11,6 +11,26 @@ interface AffiliateButtonProps {
   variant?: 'default' | 'outline'
 }
 
+function detectStore(url: string): { label: string; className: string } {
+  if (url.includes('amazon') || url.includes('amzn.to')) {
+    return {
+      label: 'Buy on Amazon',
+      className: 'w-full bg-[#FF9900] hover:bg-[#e68900] text-black font-semibold gap-2',
+    }
+  }
+  if (url.includes('flipkart') || url.includes('fktr.in')) {
+    return {
+      label: 'Buy on Flipkart',
+      className: 'w-full bg-[#2874f0] hover:bg-[#1a5fc8] text-white font-semibold gap-2',
+    }
+  }
+  // Company website (ASUS store, etc.)
+  return {
+    label: 'Check Price',
+    className: 'w-full gap-2',
+  }
+}
+
 export function AffiliateButton({
   url,
   laptopName,
@@ -24,25 +44,23 @@ export function AffiliateButton({
     maximumFractionDigits: 0,
   }).format(price)
 
+  const store = detectStore(url)
+
   return (
     <a
       href={url}
       target="_blank"
       rel="noopener noreferrer sponsored"
-      aria-label={`Buy ${laptopName} on Amazon India for ${formattedPrice}`}
+      aria-label={`${store.label} — ${laptopName} for ${formattedPrice}`}
       className="block"
     >
       <Button
         size={size}
         variant={variant}
-        className={
-          variant === 'default'
-            ? 'w-full bg-[#FF9900] hover:bg-[#e68900] text-black font-semibold gap-2'
-            : 'w-full gap-2'
-        }
+        className={variant === 'default' ? store.className : 'w-full gap-2'}
       >
         <ShoppingCart className="h-4 w-4" />
-        Buy on Amazon — {formattedPrice}
+        {store.label} — {formattedPrice}
         <ExternalLink className="h-3 w-3 opacity-70" />
       </Button>
     </a>
