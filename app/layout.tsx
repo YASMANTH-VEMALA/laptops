@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Script from 'next/script'
 import './globals.css'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { MobileNav } from '@/components/MobileNav'
 import { generateOrganizationSchema } from '@/lib/seo-helpers'
 
 const interSans = Inter({ variable: '--font-sans', subsets: ['latin'] })
@@ -45,7 +46,7 @@ function SiteHeader() {
             About
           </Link>
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           <Link
             href="/"
@@ -53,6 +54,7 @@ function SiteHeader() {
           >
             Find My Laptop
           </Link>
+          <MobileNav />
         </div>
       </div>
     </header>
