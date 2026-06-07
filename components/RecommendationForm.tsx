@@ -196,7 +196,7 @@ export function RecommendationForm() {
         {loading ? (
           <>
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            Analysing {Object.keys(form).length * 20}% complete…
+            Analysing {REQUIRED_FIELDS.filter((f) => form[f]).length * 20}% complete…
           </>
         ) : (
           'Find My Perfect Laptop →'
