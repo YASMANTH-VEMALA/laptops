@@ -209,7 +209,7 @@ Make the explanation confident and detailed — the goal is to build trust by sh
 async function generateExplanation(laptop, useCase) {
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
-    max_tokens: 900,
+    max_tokens: 1200,
     system: SYSTEM_PROMPT,
     messages: [
       {
