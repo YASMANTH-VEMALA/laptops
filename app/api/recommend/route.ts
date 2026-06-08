@@ -145,10 +145,36 @@ export async function POST(req: NextRequest) {
     }))
   }
 
-  // Merge ranking with cached explanations (or fallback text)
-  const top3 = ranking.slice(0, 3).map((r) => {
+  // Merge ranking with cached explanations (generate on-demand if missing)
+  const top3 = await Promise.all(ranking.slice(0, 3).map(async (r) => {
     const laptop = laptopsForClaude.find((l) => l.id === r.laptop_id)!
-    const expl = explanationMap.get(r.laptop_id)
+    let expl = explanationMap.get(r.laptop_id)
+
+    // If explanation is missing, generate it on-demand
+    if (!expl) {
+      try {
+        const { generateExplanation } = await import('@/lib/explanation-generator')
+        const generated = await generateExplanation(laptop, useCaseTag)
+
+        // Cache it immediately
+        await supabase.from('laptop_explanations').upsert(
+          {
+            laptop_id: laptop.id,
+            use_case: useCaseTag,
+            explanation: generated.explanation,
+            key_strengths: generated.key_strengths,
+            one_weakness: generated.one_weakness,
+            cached_at: new Date().toISOString(),
+          },
+          { onConflict: 'laptop_id,use_case' }
+        )
+
+        expl = generated
+      } catch (err) {
+        console.error(`[/api/recommend] On-demand explanation generation failed for ${laptop.id}:`, err)
+        // Fallback to generic text if generation fails
+      }
+    }
 
     return {
       rank: r.rank,
@@ -164,7 +190,7 @@ export async function POST(req: NextRequest) {
       buy_confidence: r.buy_confidence,
       use_case_fit_score: r.use_case_fit_score,
     }
-  })
+  }))
 
   const result: RecommendationResult = {
     top3,

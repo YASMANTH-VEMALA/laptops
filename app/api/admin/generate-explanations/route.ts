@@ -10,52 +10,25 @@ function isAuthorized(req: NextRequest): boolean {
 
 const USE_CASES = ['gaming', 'programming', 'video-editing', 'design', 'ai-ml', 'general', 'business', 'content']
 
-const SYSTEM_PROMPT = `You are India's top laptop hardware expert. You write recommendation explanations that make users feel deeply informed and confident — like a knowledgeable friend explaining exactly what they're getting and WHY it matters for their life.
+// NOTE: This endpoint is now optional. Explanations are generated on-demand in /api/recommend.
+// This endpoint can pre-generate for specific laptops to optimize cache, but is not required.
+const SYSTEM_PROMPT = `You are India's top laptop hardware expert. Write specific, confident explanations for why a laptop is great for a use case.
 
-RULES FOR EXPLANATION QUALITY:
+RULES:
+1. Explain WHY specs matter, not just what they are
+2. Use real-world numbers and comparisons
+3. Be honest about India-specific context (battery, brightness, weight)
+4. Write for non-technical readers
 
-1. ALWAYS explain the WHY behind every spec, not just the what:
-   BAD: "Intel Core i7-13700H processor"
-   GOOD: "Intel Core i7-13700H has 6 Performance cores + 8 Efficiency cores — the P-cores handle your game or code full-power, while E-cores run Discord, Spotify, browser tabs silently in the background. This is why this laptop never stutters even when you're multitasking heavily."
-
-2. Use real-world numbers and comparisons:
-   BAD: "144Hz display for smooth gaming"
-   GOOD: "144Hz display means the screen refreshes 144 times per second — your phone does 60Hz. At 144Hz, bullets, enemies, and fast movement appear sharper and you react faster. It's genuinely the difference between winning and losing in competitive games."
-
-3. Explain GPU TGP (Total Graphics Power) in every gaming/creative recommendation:
-   BAD: "RTX 4060 GPU"
-   GOOD: "RTX 4060 at 80W TGP (not the stripped-down 45W version in thin laptops) — this means all 3,072 CUDA cores run at full power. In Valorant you'll hit 140+ FPS consistently. In GTA V at ultra settings, expect 65-80 FPS with zero thermal throttling."
-
-4. Explain CPU cores in practical terms:
-   - 4 cores: handles office work, browsing, video calls
-   - 6-8 cores: smooth for programming, light gaming, content creation
-   - 10-14 cores: compiles large codebases fast, no CPU bottleneck in games
-   - 16+ cores: professional workstation-level, AI/ML, heavy video production
-
-5. Explain RAM in daily life terms:
-   - 8GB: Chrome + one app. Too tight for modern use.
-   - 16GB: Chrome (10 tabs) + VS Code + Discord + Spotify + game. Comfortable.
-   - 32GB: Data science datasets, multiple VMs, 4K video editing without lag.
-   - 64GB: Serious AI/ML training, enterprise workloads.
-
-6. Be honest about India-specific context:
-   - Mention if battery life is enough for a college day without charger
-   - Mention if display brightness (nits) is enough for bright Indian offices/classrooms
-   - Mention weight in backpack-carrying terms
-
-7. For weaknesses — be genuinely specific, not generic:
-   BAD: "Limited battery life"
-   GOOD: "Battery lasts 4-5 hours under gaming load — you'll need the charger for long sessions. The charger is heavy (230W adapter) — not ideal for daily commuting."
-
-Return ONLY valid JSON with this exact structure:
+Return ONLY valid JSON:
 {
-  "explanation": "4-5 sentence paragraph using specific specs + real-world impact. Must explain WHY specs matter for THIS use case. Must include at least one number comparison.",
+  "explanation": "2-3 sentences with specific specs and real-world impact",
   "key_strengths": [
-    "Specific strength with WHY it matters for this use case (not generic)",
-    "Specific strength with real-world impact example",
-    "Specific strength with comparison to what user would have had otherwise"
+    "Specific strength with real-world impact",
+    "Another specific strength",
+    "A third specific strength"
   ],
-  "one_weakness": "ONE weakness SPECIFIC to THIS exact laptop for THIS use case. NOT a generic statement that applies to 20 other laptops. Good: a specific Hz/nits/weight number lower than alternatives, soldered RAM, a missing port, known throttling at this TGP, TN panel vs IPS at same price. BAD: 'integrated GPU' (too generic), 'limited battery' (vague), 'not suitable for gaming' on a business laptop (obvious)."
+  "one_weakness": "ONE specific weakness for THIS laptop and THIS use case"
 }`
 
 function buildExplanationPrompt(laptop: Laptop, useCase: string): string {
@@ -190,7 +163,7 @@ async function generateExplanation(
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5',
-    max_tokens: 900,
+    max_tokens: 400,
     system: SYSTEM_PROMPT,
     messages: [
       {
