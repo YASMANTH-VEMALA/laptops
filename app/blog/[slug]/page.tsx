@@ -60,10 +60,10 @@ export async function generateMetadata({
       publishedTime: post.created_at,
       modifiedTime: post.updated_at,
       authors: ['Laptop Advisor'],
-      url: `https://laptick.in/blog/${post.slug}`,
+      url: `https://laptick.com/blog/${post.slug}`,
       images: [
         {
-          url: post.image_url || `https://laptick.in/api/og/blog/${post.slug}`,
+          url: post.image_url || `https://laptick.com/api/og/blog/${post.slug}`,
           width: 1200,
           height: 630,
           alt: post.title
@@ -74,7 +74,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: post.title,
       description: post.meta_description,
-      images: [post.image_url || `https://laptick.in/api/og/blog/${post.slug}`]
+      images: [post.image_url || `https://laptick.com/api/og/blog/${post.slug}`]
     }
   }
 }
