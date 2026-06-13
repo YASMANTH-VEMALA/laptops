@@ -33,20 +33,25 @@ function getClientIp(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  const { allowed, remaining, reset } = await checkRateLimit(ip)
-  if (!allowed) {
-    return NextResponse.json(
-      { error: 'Rate limit exceeded. Try again in an hour.' },
-      {
-        status: 429,
-        headers: {
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': String(reset),
-          'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
-        },
-      }
-    )
-  }
+
+  // Rate limiting disabled during development
+  // TODO: Re-enable before production deploy
+  // const { allowed, remaining, reset } = await checkRateLimit(ip)
+  // if (!allowed) {
+  //   return NextResponse.json(
+  //     { error: 'Rate limit exceeded. Try again in an hour.' },
+  //     {
+  //       status: 429,
+  //       headers: {
+  //         'X-RateLimit-Remaining': '0',
+  //         'X-RateLimit-Reset': String(reset),
+  //         'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
+  //       },
+  //     }
+  //   )
+  // }
+
+  const remaining = 999 // Dummy value while rate limiting disabled
 
   let body: unknown
   try {
@@ -202,11 +207,15 @@ export async function POST(req: NextRequest) {
 
   // Store full response in cache (24h TTL)
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-  await supabase.from('recommendation_cache').upsert({
+  const { error: cacheError } = await supabase.from('recommendation_cache').upsert({
     query_hash: queryHash,
     result_json: responsePayload,
     expires_at: expiresAt,
   })
+
+  if (cacheError) {
+    console.error('[/api/recommend] Cache storage failed:', cacheError)
+  }
 
   return NextResponse.json(responsePayload, {
     headers: {
