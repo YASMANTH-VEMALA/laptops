@@ -1,12 +1,9 @@
 import { Metadata } from 'next'
-import { createClient } from '@supabase/supabase-js'
+import { getServiceClient } from '@/lib/supabase'
 import { generateBlogPostingSchema } from '@/lib/seo-helpers'
 import Link from 'next/link'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
+const getSupabase = () => getServiceClient()
 
 interface BlogPost {
   slug: string
@@ -33,12 +30,13 @@ interface Laptop {
 export async function generateMetadata({
   params
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }): Promise<Metadata> {
-  const { data: post } = await supabase
+  const { slug } = await params
+  const { data: post } = await getSupabase()
     .from('blog_posts')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .eq('published', true)
     .single()
 
@@ -80,7 +78,7 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const { data: posts } = await supabase
+  const { data: posts } = await getSupabase()
     .from('blog_posts')
     .select('slug')
     .eq('published', true)
@@ -91,7 +89,7 @@ export async function generateStaticParams() {
 }
 
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
-  const { data } = await supabase
+  const { data } = await getSupabase()
     .from('blog_posts')
     .select('*')
     .eq('slug', slug)
@@ -104,7 +102,7 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
 async function getFeaturedLaptops(laptopIds: string[]): Promise<Laptop[]> {
   if (!laptopIds || laptopIds.length === 0) return []
 
-  const { data } = await supabase
+  const { data } = await getSupabase()
     .from('laptops')
     .select('id, slug, name, price_inr, brand, affiliate_amazon_in')
     .in('id', laptopIds)
@@ -117,7 +115,7 @@ async function getRelatedBlogPosts(
   currentSlug: string,
   limit: number = 3
 ): Promise<BlogPost[]> {
-  const { data } = await supabase
+  const { data } = await getSupabase()
     .from('blog_posts')
     .select('*')
     .eq('published', true)
@@ -131,9 +129,10 @@ async function getRelatedBlogPosts(
 export default async function BlogPostPage({
   params
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
-  const post = await getBlogPost(params.slug)
+  const { slug } = await params
+  const post = await getBlogPost(slug)
 
   if (!post) {
     return (
