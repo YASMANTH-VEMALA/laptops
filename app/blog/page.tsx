@@ -131,12 +131,12 @@ const SPEC_EXPLAINED = [
 ]
 
 const ARTICLES = [
-  { title: 'Best Laptops for Students Under ₹60,000 in India (2026)', tag: 'Students', date: 'Coming soon' },
-  { title: 'Best Gaming Laptops Under ₹1,20,000 in India (2026)', tag: 'Gaming', date: 'Coming soon' },
-  { title: 'Best Laptops for Video Editing Under ₹1,00,000 (2026)', tag: 'Video Editing', date: 'Coming soon' },
-  { title: 'MacBook Air M4 vs Dell XPS 13: Which for Developers?', tag: 'Comparison', date: 'Coming soon' },
-  { title: 'Why Your ₹80,000 Laptop Feels Slower Than a ₹50,000 One', tag: 'Explained', date: 'Coming soon' },
-  { title: 'GPU TGP Explained: The Spec Nobody Mentions But Changes Everything', tag: 'Explained', date: 'Coming soon' },
+  { title: 'Best Laptops for Students Under ₹60,000 in India (2026)', tag: 'Students', slug: 'best-laptop-for-students-under-60k-india-2026', date: 'Published' },
+  { title: 'Best Gaming Laptops Under ₹1,20,000 in India (2026)', tag: 'Gaming', slug: 'best-gaming-laptop-under-120000-india', date: 'Published' },
+  { title: 'Best Laptops for Programming India', tag: 'Coding', slug: 'best-laptop-for-programming-india', date: 'Published' },
+  { title: 'Best Laptops for Video Editing Under ₹1,00,000 (2026)', tag: 'Video Editing', slug: null, date: 'Coming soon' },
+  { title: 'MacBook Air M4 vs Dell XPS 13: Which for Developers?', tag: 'Comparison', slug: null, date: 'Coming soon' },
+  { title: 'Why Your ₹80,000 Laptop Feels Slower Than a ₹50,000 One', tag: 'Explained', slug: null, date: 'Coming soon' },
 ]
 
 export default function BlogPage() {
@@ -248,15 +248,27 @@ export default function BlogPage() {
           <p className="text-muted-foreground text-sm mt-1">Deep dives — publishing soon.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          {ARTICLES.map(({ title, tag, date }) => (
-            <div
-              key={title}
-              className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-3 hover:border-border transition-colors"
-            >
-              <Badge variant="secondary" className="text-xs">{tag}</Badge>
-              <h3 className="font-semibold text-sm leading-snug">{title}</h3>
-              <p className="text-xs text-muted-foreground">{date}</p>
-            </div>
+          {ARTICLES.map(({ title, tag, slug, date }) => (
+            slug ? (
+              <Link
+                key={title}
+                href={`/blog/${slug}`}
+                className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-3 hover:border-accent hover:bg-accent/5 transition-colors"
+              >
+                <Badge variant="secondary" className="text-xs">{tag}</Badge>
+                <h3 className="font-semibold text-sm leading-snug text-foreground hover:text-accent transition-colors">{title}</h3>
+                <p className="text-xs text-muted-foreground">{date}</p>
+              </Link>
+            ) : (
+              <div
+                key={title}
+                className="rounded-xl border border-border/50 bg-card/30 p-5 space-y-3 opacity-60"
+              >
+                <Badge variant="secondary" className="text-xs">{tag}</Badge>
+                <h3 className="font-semibold text-sm leading-snug">{title}</h3>
+                <p className="text-xs text-muted-foreground">{date}</p>
+              </div>
+            )
           ))}
         </div>
       </section>
