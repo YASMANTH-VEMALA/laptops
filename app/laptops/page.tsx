@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { getServiceClient } from '@/lib/supabase'
-import { LaptopCard } from '@/components/LaptopCard'
+import { LaptopsClient } from '@/components/LaptopsClient'
 import type { Laptop } from '@/types/laptop'
 
 export const metadata: Metadata = {
@@ -21,17 +21,6 @@ async function getLaptops(): Promise<Laptop[]> {
   return (data as Laptop[]) ?? []
 }
 
-const BRANDS = ['All', 'Apple', 'Dell', 'HP', 'Lenovo', 'ASUS', 'MSI', 'Acer', 'Samsung']
-const USE_CASES = [
-  { value: 'all', label: 'All' },
-  { value: 'video-editing', label: 'Video Editing' },
-  { value: 'programming', label: 'Coding' },
-  { value: 'gaming', label: 'Gaming' },
-  { value: 'general', label: 'General' },
-  { value: 'business', label: 'Business' },
-  { value: 'ai-ml', label: 'AI / ML' },
-]
-
 export default async function LaptopsPage() {
   const laptops = await getLaptops()
 
@@ -51,12 +40,8 @@ export default async function LaptopsPage() {
         Use the recommendation tool above for personalised advice.
       </p>
 
-      {/* Laptop grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {laptops.map((laptop) => (
-          <LaptopCard key={laptop.id} laptop={laptop} />
-        ))}
-      </div>
+      {/* Client-side filtering */}
+      <LaptopsClient laptops={laptops} />
 
       {laptops.length === 0 && (
         <div className="py-20 text-center text-muted-foreground">
