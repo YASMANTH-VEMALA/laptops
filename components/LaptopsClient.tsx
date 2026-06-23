@@ -116,7 +116,9 @@ export function LaptopsClient({ laptops }: LaptopsClientProps) {
   const [webResults, setWebResults] = useState<WebLaptopResult[]>([])
   const [webSearchQuery, setWebSearchQuery] = useState('')
   const [webSearchLoading, setWebSearchLoading] = useState(false)
+  const [webSearchError, setWebSearchError] = useState<string | null>(null)
   const [selectedWebResult, setSelectedWebResult] = useState<WebLaptopResult | null>(null)
+  const [agentSummary, setAgentSummary] = useState('Showing the full laptop table.')
   const [selectedLocalLaptop, setSelectedLocalLaptop] = useState<Laptop | null>(null)
   const [agentMessages, setAgentMessages] = useState<AgentMessage[]>([
     {
@@ -294,9 +296,10 @@ export function LaptopsClient({ laptops }: LaptopsClientProps) {
       setWebResults(results)
       setSelectedWebResult(null)
       return results.length as number
-    } catch {
+    } catch (err: any) {
       console.warn('[web search]: No online stores returned results.')
       setWebResults([])
+      setWebSearchError(err.message || 'No online stores returned results.')
       return null
     } finally {
       setWebSearchLoading(false)
