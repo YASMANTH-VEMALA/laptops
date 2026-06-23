@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServiceClient } from '@/lib/supabase'
-import { getRanking, mapFormToUseCaseTag } from '@/lib/claude'
-import { hashFormData } from '@/lib/hash'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { searchPipeline } from '@/lib/search-pipeline'
 import { BUDGET_RANGES } from '@/types/laptop'
-import type { RecommendationFormData, RecommendationResult } from '@/types/recommendation'
-import type { Laptop } from '@/types/laptop'
+import type { RecommendationFormData } from '@/types/recommendation'
+import crypto from 'crypto'
 
-const VALID_ROLES = ['student','software-developer','designer','business-professional','gamer','content-creator','ai-ml-engineer']
-const VALID_USES = ['coding','gaming','office-work','video-editing','graphic-design','general-use','ai-ml']
-const VALID_PRIORITIES = ['battery-life','raw-performance','portability','display-quality','value-for-money']
-const VALID_OS = ['Windows','macOS','Linux','no-preference']
+import { getServiceClient } from '@/lib/supabase'
+import { normalizeAndHash } from '@/lib/normalize'
+
+const VALID_ROLES = [
+  'student',
+  'software-developer',
+  'designer',
+  'business-professional',
+  'gamer',
+  'content-creator',
+  'ai-ml-engineer',
+]
+const VALID_USES = ['coding', 'gaming', 'office-work', 'video-editing', 'graphic-design', 'general-use', 'ai-ml']
+const VALID_PRIORITIES = ['battery-life', 'raw-performance', 'portability', 'display-quality', 'value-for-money']
+const VALID_OS = ['Windows', 'macOS', 'Linux', 'no-preference']
 
 function validateForm(body: unknown): RecommendationFormData | null {
   if (!body || typeof body !== 'object') return null
@@ -31,27 +40,54 @@ function getClientIp(req: NextRequest): string {
   )
 }
 
+function getSessionId(req: NextRequest): string {
+  // Use a combination of IP + user-agent hash as session ID
+  const ip = getClientIp(req)
+  const ua = req.headers.get('user-agent') || 'unknown'
+  return crypto.createHash('sha256').update(`${ip}:${ua}`).digest('hex').slice(0, 16)
+}
+
+/**
+ * Build natural language query from form data
+ */
+function buildQueryFromForm(form: RecommendationFormData): string {
+  const parts: string[] = []
+
+  if (form.budget_key) {
+    const budgetMatch = BUDGET_RANGES.find((r) => r.label === form.budget_key)
+    if (budgetMatch) {
+      parts.push(`under ₹${budgetMatch.max}`)
+    }
+  }
+
+  if (form.primary_use && form.primary_use !== 'general-use') {
+    parts.push(form.primary_use.replace('-', ' '))
+  }
+
+  if (form.os_preference && form.os_preference !== 'no-preference') {
+    parts.push(form.os_preference)
+  }
+
+  return `${parts.join(' ')} laptop`.trim()
+}
+
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
 
-  // Rate limiting disabled during development
-  // TODO: Re-enable before production deploy
-  // const { allowed, remaining, reset } = await checkRateLimit(ip)
-  // if (!allowed) {
-  //   return NextResponse.json(
-  //     { error: 'Rate limit exceeded. Try again in an hour.' },
-  //     {
-  //       status: 429,
-  //       headers: {
-  //         'X-RateLimit-Remaining': '0',
-  //         'X-RateLimit-Reset': String(reset),
-  //         'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
-  //       },
-  //     }
-  //   )
-  // }
-
-  const remaining = 999 // Dummy value while rate limiting disabled
+  const { allowed, remaining, reset } = await checkRateLimit(ip)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Try again in an hour.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(reset),
+          'Retry-After': String(Math.ceil((reset - Date.now()) / 1000)),
+        },
+      }
+    )
+  }
 
   let body: unknown
   try {
@@ -65,162 +101,71 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid form data' }, { status: 400 })
   }
 
-  const queryHash = hashFormData(form)
-  const supabase = getServiceClient()
-
-  // Layer 1: Full query cache — identical inputs return instantly
-  const { data: cached } = await supabase
-    .from('recommendation_cache')
-    .select('result_json')
-    .eq('query_hash', queryHash)
-    .gt('expires_at', new Date().toISOString())
-    .single()
-
-  if (cached) {
-    return NextResponse.json(
-      { ...cached.result_json, query_hash: queryHash },
-      { headers: { 'X-Cache': 'HIT' } }
-    )
-  }
-
-  // Smart pre-filter: budget → OS → brand → use-case tag
-  const budgetRange = BUDGET_RANGES.find((r) => r.label === form.budget_key)!
-  const useCaseTag = mapFormToUseCaseTag(form)
-
-  let query = supabase
-    .from('laptops')
-    .select('*')
-    .eq('is_active', true)
-    .gte('price_inr', budgetRange.min)
-    .lte('price_inr', budgetRange.max)
-
-  if (form.os_preference !== 'no-preference') {
-    query = query.in('os_support', [form.os_preference, 'any'])
-  }
-
-  if (form.brand_preference && form.brand_preference !== 'no-preference') {
-    query = query.eq('brand', form.brand_preference)
-  }
-
-  const { data: allFiltered } = await query.order('last_updated', { ascending: false }).limit(50)
-
-  if (!allFiltered || allFiltered.length === 0) {
-    const brandMsg = form.brand_preference && form.brand_preference !== 'no-preference'
-      ? ` Try removing the ${form.brand_preference} brand filter.`
-      : ' Try a wider budget.'
-    return NextResponse.json(
-      { error: `No laptops found in this budget range.${brandMsg}` },
-      { status: 404 }
-    )
-  }
-
-  let laptopsForClaude = (allFiltered as Laptop[]).filter((l) =>
-    l.best_for.includes(useCaseTag)
-  )
-  if (laptopsForClaude.length < 6) {
-    laptopsForClaude = allFiltered as Laptop[]
-  }
-  laptopsForClaude = laptopsForClaude.slice(0, 15)
-
-  // Layer 2: Fetch all cached explanations for these laptops
-  const { data: cachedExplanations } = await supabase
-    .from('laptop_explanations')
-    .select('*')
-    .in('laptop_id', laptopsForClaude.map((l) => l.id))
-    .eq('use_case', useCaseTag)
-
-  const explanationMap = new Map(
-    (cachedExplanations || []).map((e: any) => [e.laptop_id, e])
-  )
-
-  // Claude ALWAYS ranks — it analyzes specs to pick the best 3 for this user.
-  // Cache only provides the explanation text (why it's great), not the ranking decision.
-  let ranking
   try {
-    ranking = await getRanking(form, laptopsForClaude, budgetRange.label)
-  } catch (err) {
-    console.error('[/api/recommend] Claude ranking failed:', err)
-    // Fallback: order by price fit and use cached explanations
-    ranking = laptopsForClaude.slice(0, 3).map((l, i) => ({
-      rank: (i + 1) as 1 | 2 | 3,
-      laptop_id: l.id,
-      headline: `${l.brand} — solid ${useCaseTag} pick`,
-      buy_confidence: 'Medium' as const,
-      use_case_fit_score: 7,
-    }))
-  }
+    const rawQuery = buildQueryFromForm(form)
+    const sessionId = getSessionId(req)
 
-  // Merge ranking with cached explanations (generate on-demand if missing)
-  const top3 = await Promise.all(ranking.slice(0, 3).map(async (r) => {
-    const laptop = laptopsForClaude.find((l) => l.id === r.laptop_id)!
-    let expl = explanationMap.get(r.laptop_id)
+    const result = await searchPipeline(rawQuery, sessionId, ip)
+    const { hash: queryHash } = normalizeAndHash(rawQuery)
 
-    // If explanation is missing, generate it on-demand
-    if (!expl) {
-      try {
-        const { generateExplanation } = await import('@/lib/explanation-generator')
-        const generated = await generateExplanation(laptop, useCaseTag)
-
-        // Cache it immediately
-        await supabase.from('laptop_explanations').upsert(
-          {
-            laptop_id: laptop.id,
-            use_case: useCaseTag,
-            explanation: generated.explanation,
-            key_strengths: generated.key_strengths,
-            one_weakness: generated.one_weakness,
-            cached_at: new Date().toISOString(),
-          },
-          { onConflict: 'laptop_id,use_case' }
-        )
-
-        expl = generated
-      } catch (err) {
-        console.error(`[/api/recommend] On-demand explanation generation failed for ${laptop.id}:`, err)
-        // Fallback to generic text if generation fails
+    // Construct recommendation result formatted to match expected schema of recommendation_cache
+    const top3Ranked = result.products.slice(0, 3).map((prod: any, idx: number) => {
+      const cpu = prod.specs?.cpu || 'Performance processor'
+      const ram = prod.specs?.ram ? `${prod.specs.ram} RAM` : 'Ample memory'
+      const storage = prod.specs?.storage || 'Fast SSD'
+      return {
+        rank: (idx + 1) as 1 | 2 | 3,
+        laptop_id: prod.id,
+        headline: prod.title.split(' ').slice(0, 4).join(' '),
+        why_best: prod.why_text || 'Excellent choice for your needs.',
+        key_strengths: [cpu, ram, storage],
+        one_honest_weakness: 'Review retail links for warranty and return details.',
+        buy_confidence: prod.rating && prod.rating >= 4.0 ? 'High' : 'Medium',
+        use_case_fit_score: prod.rating ? Math.round(prod.rating * 2) : 8,
       }
+    })
+
+    const recommendationResponse = {
+      result: {
+        top3: top3Ranked,
+        generated_at: new Date().toISOString(),
+        from_cache: result.cached,
+      },
+      query_hash: queryHash,
     }
 
-    return {
-      rank: r.rank,
-      laptop_id: r.laptop_id,
-      headline: r.headline,
-      why_best: expl?.explanation ?? `${laptop.name} is a strong match for your needs based on specs.`,
-      key_strengths: expl?.key_strengths ?? [
-        `${laptop.cpu_model} processor`,
-        `${laptop.ram_gb}GB ${laptop.ram_type} RAM`,
-        laptop.gpu_type === 'dedicated' ? `${laptop.gpu_model} @ ${laptop.gpu_tgp_watts}W` : 'Efficient integrated graphics',
-      ],
-      one_honest_weakness: expl?.one_weakness ?? laptop.cons?.split('.')[0] ?? 'Check specs before purchasing',
-      buy_confidence: r.buy_confidence,
-      use_case_fit_score: r.use_case_fit_score,
+    // Write to recommendation_cache
+    const supabase = getServiceClient()
+    const { error: cacheError } = await supabase.from('recommendation_cache').upsert({
+      query_hash: queryHash,
+      result_json: recommendationResponse,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    }, { onConflict: 'query_hash' })
+
+    if (cacheError) {
+      console.error('Failed to write to recommendation_cache:', cacheError)
     }
-  }))
 
-  const result: RecommendationResult = {
-    top3,
-    generated_at: new Date().toISOString(),
-    from_cache: false,
+    return NextResponse.json(
+      {
+        products: result.products.slice(0, 3), // Top 3 for form
+        all_products: result.products,
+        cached: result.cached,
+        fetched_at: result.fetched_at,
+        query_hash: queryHash,
+      },
+      {
+        headers: {
+          'X-Cache': result.cached ? 'HIT' : 'MISS',
+          'X-RateLimit-Remaining': String(remaining),
+        },
+      }
+    )
+  } catch (err) {
+    console.error('[/api/recommend] Error:', err)
+    return NextResponse.json(
+      { error: 'Failed to fetch recommendations. Please try again.' },
+      { status: 500 }
+    )
   }
-
-  const responsePayload = { result, query_hash: queryHash }
-
-  // Store full response in cache (24h TTL)
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-  const { error: cacheError } = await supabase.from('recommendation_cache').upsert({
-    query_hash: queryHash,
-    result_json: responsePayload,
-    expires_at: expiresAt,
-  })
-
-  if (cacheError) {
-    console.error('[/api/recommend] Cache storage failed:', cacheError)
-  }
-
-  return NextResponse.json(responsePayload, {
-    headers: {
-      'X-Cache': 'MISS',
-      'X-RateLimit-Remaining': String(remaining),
-    },
-  })
 }

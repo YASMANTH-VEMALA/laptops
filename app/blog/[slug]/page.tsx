@@ -140,7 +140,7 @@ export default async function BlogPostPage({
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-4xl font-bold text-gray-900">Post Not Found</h1>
           <p className="mt-4 text-gray-600">
-            Sorry, we couldn't find this blog post.
+            Sorry, we couldn&apos;t find this blog post.
           </p>
           <Link href="/blog" className="mt-8 text-blue-600 hover:text-blue-800">
             ← Back to Blog

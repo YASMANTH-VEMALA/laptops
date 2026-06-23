@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getServiceClient } from '@/lib/supabase'
 import { AffiliateButton } from '@/components/AffiliateButton'
+import { LaptopFallbackImage } from '@/components/LaptopFallbackImage'
 import { SpecGrid } from '@/components/SpecBadge'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -127,20 +128,18 @@ export default async function LaptopPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
-      <article className="mx-auto max-w-4xl px-4 py-10 space-y-8">
+      <article className="laptop-detail-page mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:px-8 space-y-6">
         {/* Breadcrumb */}
-        <nav className="text-xs text-muted-foreground flex gap-2">
-          <Link href="/" className="hover:text-foreground">Home</Link>
+        <nav className="flex border-2 border-foreground bg-background p-3 text-xs font-black uppercase tracking-[0.14em] text-muted-foreground shadow-[6px_6px_0_var(--foreground)]">
+          <Link href="/laptops" className="hover:bg-primary hover:text-foreground">Back to data console</Link>
           <span>/</span>
-          <Link href="/laptops" className="hover:text-foreground">Laptops</Link>
-        <span>/</span>
-        <span>{laptop.name}</span>
+          <span className="line-clamp-1">{laptop.name}</span>
       </nav>
 
       {/* Header */}
-      <div className="grid gap-8 md:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
         {/* Image */}
-        <div className="relative aspect-square overflow-hidden rounded-xl bg-muted/30">
+        <div className="relative aspect-square overflow-hidden border-2 border-foreground bg-secondary shadow-[6px_6px_0_var(--foreground)]">
           {laptop.image_url ? (
             <Image
               src={laptop.image_url}
@@ -151,16 +150,16 @@ export default async function LaptopPage({
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-6xl">💻</div>
+            <LaptopFallbackImage brand={laptop.brand} name={laptop.name} />
           )}
         </div>
 
         {/* Details */}
-        <div className="space-y-4">
+        <div className="space-y-4 border-2 border-foreground bg-background p-5 shadow-[6px_6px_0_var(--foreground)]">
           <div>
-            <Badge variant="secondary" className="mb-2 text-xs">{laptop.brand}</Badge>
-            <h1 className="text-2xl font-bold">{laptop.name}</h1>
-            <p className="mt-2 text-3xl font-extrabold text-blue-400">
+            <Badge variant="secondary" className="mb-3 rounded-none border-2 border-foreground bg-primary text-xs font-black text-foreground">{laptop.brand}</Badge>
+            <h1 className="font-display text-[clamp(2.8rem,6vw,6rem)] font-extrabold leading-[0.8] tracking-normal">{laptop.name}</h1>
+            <p className="mt-4 text-4xl font-black text-accent">
               {formatPrice(laptop.price_inr)}
             </p>
           </div>
@@ -168,21 +167,21 @@ export default async function LaptopPage({
           {/* Use case tags */}
           <div className="flex flex-wrap gap-1.5">
             {laptop.best_for.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs">
+              <Badge key={tag} variant="outline" className="rounded-none border-foreground bg-secondary text-xs font-black">
                 {USE_LABELS[tag] ?? tag}
               </Badge>
             ))}
           </div>
 
           {/* Pros */}
-          <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-4">
-            <p className="text-xs font-semibold text-green-400 mb-1">Why it's good</p>
+          <div className="border-2 border-foreground bg-primary p-4 shadow-[4px_4px_0_var(--foreground)]">
+            <p className="mb-1 font-mono text-xs font-black uppercase tracking-[0.14em] text-foreground">Why it&apos;s good</p>
             <p className="text-sm leading-relaxed">{laptop.pros}</p>
           </div>
 
           {/* Cons */}
-          <div className="rounded-lg bg-orange-500/5 border border-orange-500/20 p-4">
-            <p className="text-xs font-semibold text-orange-400 mb-1">One weakness</p>
+          <div className="border-2 border-foreground bg-secondary p-4">
+            <p className="mb-1 font-mono text-xs font-black uppercase tracking-[0.14em] text-foreground">One weakness</p>
             <p className="text-sm leading-relaxed">{laptop.cons}</p>
           </div>
 
@@ -198,20 +197,20 @@ export default async function LaptopPage({
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-foreground" />
 
       {/* Full spec grid */}
-      <section>
-        <h2 className="text-xl font-bold mb-4">Full Specifications</h2>
+      <section className="border-2 border-foreground bg-background p-5 shadow-[6px_6px_0_var(--foreground)]">
+        <h2 className="mb-4 font-display text-5xl font-extrabold leading-none">Full Specifications</h2>
         <SpecGrid specs={specs} />
       </section>
 
       {/* Spec explanations — plain English */}
       <section className="space-y-4">
-        <h2 className="text-xl font-bold">What these specs mean for you</h2>
+        <h2 className="font-display text-5xl font-extrabold leading-none">What these specs mean for you</h2>
 
         {laptop.gpu_type === 'dedicated' && laptop.gpu_tgp_watts > 0 && (
-          <div className="rounded-lg border border-border/50 bg-muted/20 p-4">
+          <div className="border-2 border-foreground bg-background p-4 shadow-[4px_4px_0_var(--foreground)]">
             <p className="font-semibold text-sm mb-1">GPU: {laptop.gpu_model} at {laptop.gpu_tgp_watts}W TGP</p>
             <p className="text-sm text-muted-foreground">
               TGP (Total Graphics Power) is the actual wattage your GPU runs at. The same RTX 4060 at 80W
@@ -221,8 +220,8 @@ export default async function LaptopPage({
         )}
 
         {laptop.ram_gb <= 8 && (
-          <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-4">
-            <p className="font-semibold text-sm mb-1 text-orange-400">⚠ 8GB RAM Warning</p>
+          <div className="border-2 border-foreground bg-primary p-4 shadow-[4px_4px_0_var(--foreground)]">
+            <p className="font-semibold text-sm mb-1 text-foreground">8GB RAM Warning</p>
             <p className="text-sm text-muted-foreground">
               8GB is the absolute minimum for modern Windows laptops. You will notice slowdowns
               with 15+ browser tabs, running background apps, or any creative software. If possible,
@@ -231,8 +230,8 @@ export default async function LaptopPage({
           </div>
         )}
 
-        <div className="rounded-lg border border-border/50 bg-muted/20 p-4">
-          <p className="font-semibold text-sm mb-1">Display: {laptop.display_size}" {laptop.display_type} at {laptop.display_hz}Hz</p>
+        <div className="border-2 border-foreground bg-background p-4 shadow-[4px_4px_0_var(--foreground)]">
+          <p className="font-semibold text-sm mb-1">Display: {laptop.display_size}&quot; {laptop.display_type} at {laptop.display_hz}Hz</p>
           <p className="text-sm text-muted-foreground">
             {laptop.display_type === 'OLED'
               ? 'OLED panels have perfect blacks, infinite contrast, and excellent colour accuracy — ideal for design and video work. Watch content on this and regular IPS screens look flat by comparison.'
@@ -245,16 +244,16 @@ export default async function LaptopPage({
       </section>
 
       {/* Get personalised recommendation CTA */}
-      <div className="rounded-xl bg-blue-600/10 border border-blue-500/30 p-6 text-center space-y-3">
+      <div className="border-2 border-foreground bg-primary p-6 text-center shadow-[6px_6px_0_var(--foreground)] space-y-3">
         <p className="font-semibold">Not sure if this is right for you?</p>
         <p className="text-sm text-muted-foreground">
           Answer 5 questions and get a personalised ranking with expert explanations — free.
         </p>
         <Link
-          href="/"
-          className="inline-block rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          href="/laptops"
+          className="inline-block border-2 border-foreground bg-background px-6 py-2.5 text-sm font-black text-foreground shadow-[4px_4px_0_var(--foreground)] transition hover:-translate-x-0.5 hover:-translate-y-0.5"
         >
-          Get My Personalised Recommendation →
+          Ask the data agent
         </Link>
       </div>
     </article>

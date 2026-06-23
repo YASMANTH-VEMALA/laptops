@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, Minus } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import {
   Table,
   TableBody,

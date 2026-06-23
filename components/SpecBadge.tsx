@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 interface SpecBadgeProps {
@@ -12,13 +11,13 @@ export function SpecBadge({ label, value, highlight, className }: SpecBadgeProps
   return (
     <div
       className={cn(
-        'flex flex-col items-center rounded-md border px-3 py-2 text-center',
-        highlight ? 'border-accent/40 bg-accent/5' : 'border-border bg-secondary',
+        'flex flex-col border-2 border-foreground px-3 py-2 text-left',
+        highlight ? 'bg-primary text-foreground' : 'bg-secondary',
         className
       )}
     >
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={cn('mt-0.5 text-sm font-semibold', highlight && 'text-accent')}>
+      <span className="font-mono text-[0.65rem] font-black uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
+      <span className={cn('mt-1 text-sm font-black', highlight && 'text-foreground')}>
         {value}
       </span>
     </div>
@@ -31,7 +30,7 @@ interface SpecGridProps {
 
 export function SpecGrid({ specs }: SpecGridProps) {
   return (
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {specs.map((spec) => (
         <SpecBadge key={spec.label} {...spec} />
       ))}

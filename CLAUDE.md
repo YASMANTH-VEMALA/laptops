@@ -1,3 +1,5 @@
+
+
 # LaptopAdvisor — Claude Code Project
 
 AI-powered laptop recommendation engine with affiliate monetization.
@@ -53,9 +55,64 @@ Target audience: students, professionals, creators who know brand names but not 
 - `/clear-cache` — purge stale recommendation_cache entries
 - `/deploy` — deploy to Vercel and verify build
 
-## Monday Agent (Automated DB Updates)
-Runs every Monday at 9am via `/schedule`. Uses WebSearch + WebFetch (no scrapers).
-Searches for new releases and price changes → upserts Supabase → clears stale cache.
+## Weekly Catalog Ingestion (Automated DB Updates)
+
+### Cron Job: `/api/cron/ingest-batch`
+- **Schedule:** Sundays 9:30pm UTC (Mondays 2:00am IST)
+- **Configured in:** `vercel.json`
+- **Implementation:** `app/api/cron/ingest-batch/route.ts`
+
+**What it does:**
+1. Searches Rainforest API with 20 queries (brands, models, use cases, price ranges)
+2. Normalizes results to laptop schema (extract specs from titles)
+3. Deduplicates by ASIN (avoids duplicate entries)
+4. Batch upserts to `laptops` table (100 items at a time)
+5. Rate-limited: 2s between queries to respect API limits
+
+**Search coverage:**
+- Gaming laptops (ASUS ROG, MSI, Alienware)
+- Productivity (HP EliteBook, Dell XPS, Lenovo ThinkPad, MacBook)
+- Budget segment (under 50k, 30k, 80k)
+- Use cases (video editing, coding, design, AI/ML)
+- Premium segment (over 100k)
+
+**Result:** Pre-generates 300+ laptops weekly, reducing reliance on real-time API calls
+
+### Dual-Path Search Strategy
+The system uses two complementary approaches:
+
+**Path A: Real-time Web Search (Chat)**
+- When user asks for laptop recommendations, `/api/chat` searches Rainforest API live
+- Returns newest/cheapest options, but slower (3-5s latency)
+- Used in chat context: "best laptop under 40k"
+
+**Path B: Pre-Generated Catalog (Cron)**
+- `/api/cron/ingest-batch` runs weekly to populate 300+ laptops
+- Used by `/api/recommend` for instant recommendations (25ms latency)
+- Enables vector search (pgvector) for semantic matching
+- Falls back to Path A if Supabase results unsatisfactory
+
+**Manual testing:**
+```bash
+# Test the cron endpoint locally (requires running dev server)
+CRON_SECRET=test-secret ./scripts/test-cron.sh
+
+# Expected response: JSON with stats
+{
+  "success": true,
+  "stats": {
+    "queries_run": 20,
+    "total_fetched": 150,
+    "total_normalized": 120,
+    "total_upserted": 120
+  }
+}
+```
+
+**Setup before first deploy:**
+1. Generate cron secret: `openssl rand -hex 32`
+2. Add `CRON_SECRET` to Vercel environment variables
+3. Deploy to activate Vercel Cron
 
 **Cache invalidation strategy:**
 - **New laptop:** No action needed. First user request in each use-case generates explanation, which is cached permanently.

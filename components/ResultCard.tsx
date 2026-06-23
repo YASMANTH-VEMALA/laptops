@@ -4,24 +4,16 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
-  Trophy,
-  Medal,
-  Award,
   ChevronDown,
   ChevronUp,
   CheckCircle2,
   AlertCircle,
-  Cpu,
-  HardDrive,
-  Monitor,
-  Battery,
-  Weight,
-  Zap,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { AffiliateButton } from '@/components/AffiliateButton'
+import { LaptopFallbackImage } from '@/components/LaptopFallbackImage'
 import { SpecGrid } from '@/components/SpecBadge'
 import type { RankedLaptop } from '@/types/recommendation'
 import type { Laptop } from '@/types/laptop'
@@ -29,7 +21,6 @@ import { cn } from '@/lib/utils'
 
 const RANK_CONFIG = {
   1: {
-    icon: Trophy,
     label: 'Best Pick',
     color: 'text-yellow-400',
     border: 'border-yellow-500/40',
@@ -37,7 +28,6 @@ const RANK_CONFIG = {
     badge: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
   },
   2: {
-    icon: Medal,
     label: 'Runner Up',
     color: 'text-slate-300',
     border: 'border-slate-500/40',
@@ -45,7 +35,6 @@ const RANK_CONFIG = {
     badge: 'bg-slate-500/20 text-slate-300 border-slate-500/40',
   },
   3: {
-    icon: Award,
     label: 'Great Value',
     color: 'text-amber-600',
     border: 'border-amber-700/40',
@@ -70,7 +59,6 @@ function formatPrice(price: number) {
 export function ResultCard({ ranked, laptop }: ResultCardProps) {
   const [expanded, setExpanded] = useState(true)
   const cfg = RANK_CONFIG[ranked.rank]
-  const RankIcon = cfg.icon
 
   const specs = [
     {
@@ -113,9 +101,7 @@ export function ResultCard({ ranked, laptop }: ResultCardProps) {
                 sizes="(max-width: 640px) 100vw, 128px"
               />
             ) : (
-              <div className="flex h-full items-center justify-center">
-                <Monitor className="h-10 w-10 text-muted-foreground/40" />
-              </div>
+              <LaptopFallbackImage brand={laptop.brand} name={laptop.name} />
             )}
           </div>
 

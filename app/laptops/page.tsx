@@ -25,30 +25,17 @@ export default async function LaptopsPage() {
   const laptops = await getLaptops()
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">All Laptops</h1>
-        <p className="text-muted-foreground">
-          {laptops.length} laptops available in India · Prices updated weekly
-        </p>
+    <div className="laptops-page laptops-agent-page">
+      <div className="mx-auto max-w-[1500px] px-3 py-4 sm:px-5 lg:px-6">
+        <LaptopsClient laptops={laptops} />
+
+        {laptops.length === 0 && (
+          <div className="rounded-[2rem] border border-dashed border-foreground/20 bg-white p-12 text-center text-muted-foreground shadow-sm">
+            <p className="text-5xl font-black text-foreground">0</p>
+            <p className="mt-2">Database is being populated. Check back soon.</p>
+          </div>
+        )}
       </div>
-
-      {/* SEO intro */}
-      <p className="text-sm text-muted-foreground max-w-3xl">
-        Every laptop includes real spec breakdowns — not marketing copy. We list the actual GPU
-        TGP wattage, sustained CPU performance class, and which tasks each laptop handles well.
-        Use the recommendation tool above for personalised advice.
-      </p>
-
-      {/* Client-side filtering */}
-      <LaptopsClient laptops={laptops} />
-
-      {laptops.length === 0 && (
-        <div className="py-20 text-center text-muted-foreground">
-          <p className="text-5xl mb-4">💻</p>
-          <p>Database is being populated. Check back soon.</p>
-        </div>
-      )}
     </div>
   )
 }
