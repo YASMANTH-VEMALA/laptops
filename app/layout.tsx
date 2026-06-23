@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
-import { Inter, Geist_Mono } from 'next/font/google'
+import { EB_Garamond, Inter, Geist_Mono } from 'next/font/google'
 import Link from 'next/link'
 import Script from 'next/script'
 import './globals.css'
-import { ThemeToggle } from '@/components/ThemeToggle'
+import { NavLinks } from '@/components/NavLinks'
 import { MobileNav } from '@/components/MobileNav'
 import { generateOrganizationSchema } from '@/lib/seo-helpers'
+import { AiAssistant } from '@/components/AiAssistant'
 
 const interSans = Inter({ variable: '--font-sans', subsets: ['latin'] })
+const garamond = EB_Garamond({ variable: '--font-display', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -30,32 +32,13 @@ export const metadata: Metadata = {
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border/30 bg-background">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <span className="text-accent">⚡</span> Laptick
-        </Link>
-        <nav className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
-          <Link href="/laptops" className="hover:text-foreground transition-colors">
-            All Laptops
-          </Link>
-          <Link href="/blog" className="hover:text-foreground transition-colors">
-            Buying Guides
-          </Link>
-          <Link href="/about" className="hover:text-foreground transition-colors">
-            About
-          </Link>
+    <header className="site-header sticky top-0 z-50">
+      <div className="site-nav-bar">
+        <Link href="/" className="site-logo">Laptick</Link>
+        <nav className="site-nav-links hidden sm:flex">
+          <NavLinks />
         </nav>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <Link
-            href="/"
-            className="rounded-md bg-accent text-accent-foreground px-3 py-1.5 text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Find My Laptop
-          </Link>
-          <MobileNav />
-        </div>
+        <MobileNav />
       </div>
     </header>
   )
@@ -63,29 +46,29 @@ function SiteHeader() {
 
 function SiteFooter() {
   return (
-    <footer className="border-t border-border/30 mt-auto">
-      <div className="mx-auto max-w-6xl px-4 py-8 space-y-4">
-        <div className="grid gap-6 sm:grid-cols-2 text-sm text-muted-foreground">
+    <footer className="site-footer mt-auto border-t border-border/70 bg-foreground text-background">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-10 sm:px-6">
+        <div className="grid gap-8 text-sm text-background/70 sm:grid-cols-[1.3fr_0.7fr]">
           <div>
-            <p className="font-semibold text-foreground mb-2">Laptick</p>
-            <p className="text-xs leading-relaxed">
-              AI-powered laptop recommendations for Indian buyers. Expert specs explained simply.
+            <p className="mb-2 font-display text-3xl italic text-background">Laptick</p>
+            <p className="max-w-md text-sm leading-relaxed">
+              A sharper way to buy laptops in India. Real specs, clear tradeoffs, and recommendations built around your work.
             </p>
           </div>
           <div>
-            <p className="font-semibold text-foreground mb-2">Quick Links</p>
-            <ul className="space-y-1 text-xs">
-              <li><Link href="/laptops" className="hover:text-foreground">All Laptops</Link></li>
-              <li><Link href="/blog" className="hover:text-foreground">Buying Guides</Link></li>
-              <li><Link href="/about" className="hover:text-foreground">About</Link></li>
+            <p className="mb-2 font-semibold text-background">Quick Links</p>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/laptops" className="hover:text-primary">All Laptops</Link></li>
+              <li><Link href="/blog" className="hover:text-primary">Buying Guides</Link></li>
+              <li><Link href="/about" className="hover:text-primary">About</Link></li>
             </ul>
           </div>
         </div>
-        <div className="border-t border-border/30 pt-4 space-y-2">
-          <p className="text-center text-xs text-muted-foreground">
+        <div className="space-y-2 border-t border-background/15 pt-5">
+          <p className="text-center text-xs text-background/60">
             © {new Date().getFullYear()} Laptick · Built for Indian laptop buyers
           </p>
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="text-center text-xs text-background/50">
             Laptick contains affiliate links. We earn a commission when you purchase through Amazon links at no extra cost to you.
           </p>
         </div>
@@ -98,9 +81,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const organizationSchema = generateOrganizationSchema()
 
   return (
-    <html lang="en" className={`${interSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${interSans.variable} ${garamond.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        <script
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               try {
@@ -136,8 +121,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
         {/* Organization Schema */}
-        <script
+        <Script
+          id="organization-schema"
           type="application/ld+json"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </head>
@@ -145,6 +132,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        <AiAssistant />
       </body>
     </html>
   )

@@ -19,13 +19,13 @@ export function ShareCard({ queryHash, topLaptopName, role, primaryUse }: ShareC
       ? `${window.location.origin}/share/${queryHash}`
       : `/share/${queryHash}`
 
+  const shareText = `Best laptop for ${role} doing ${primaryUse}: ${topLaptopName} 🎯\n\nFind yours at`
+
   async function handleCopy() {
-    await navigator.clipboard.writeText(shareUrl)
+    await navigator.clipboard.writeText(`${shareText} ${shareUrl}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
-
-  const shareText = `Best laptop for ${role} doing ${primaryUse}: ${topLaptopName} 🎯\n\nFind yours at`
 
   return (
     <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-3">

@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { Laptop } from '@/types/laptop'
 import type {
   RecommendationFormData,
-  RecommendationResult,
   RankedLaptopLean,
 } from '@/types/recommendation'
 import { USE_CASE_TO_TAG } from '@/types/recommendation'

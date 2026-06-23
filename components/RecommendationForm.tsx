@@ -115,15 +115,15 @@ export function RecommendationForm() {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4">
+    <div className="advisor-form w-full max-w-2xl mx-auto space-y-4">
       {BASE_FORM_FIELDS.map((field) => (
         <Card key={field.key}>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 text-muted-foreground">{field.icon}</div>
+              <div className="mt-0.5 rounded-md border border-foreground bg-primary p-2 text-foreground">{field.icon}</div>
               <div className="flex-1 space-y-2.5">
                 <div>
-                  <p className="font-medium text-sm">{field.label}</p>
+                  <p className="font-black text-sm uppercase tracking-wide">{field.label}</p>
                   <p className="text-xs text-muted-foreground">{field.hint}</p>
                 </div>
                 <Select
@@ -152,12 +152,12 @@ export function RecommendationForm() {
         <Card>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 text-muted-foreground">
+              <div className="mt-0.5 rounded-md border border-foreground bg-primary p-2 text-foreground">
                 <Tag className="h-5 w-5" />
               </div>
               <div className="flex-1 space-y-2.5">
                 <div>
-                  <p className="font-medium text-sm">Preferred brand? <span className="text-xs font-normal text-muted-foreground ml-1">(Optional)</span></p>
+                  <p className="font-black text-sm uppercase tracking-wide">Preferred brand? <span className="text-xs font-normal normal-case tracking-normal text-muted-foreground ml-1">(Optional)</span></p>
                   <p className="text-xs text-muted-foreground">Limit to one brand, or let us pick the best across all</p>
                 </div>
                 <Select
@@ -191,7 +191,7 @@ export function RecommendationForm() {
         onClick={handleSubmit}
         disabled={!isComplete || loading}
         size="lg"
-        className="w-full text-base font-semibold py-6"
+        className="w-full text-base font-black py-6"
       >
         {loading ? (
           <>
