@@ -545,8 +545,8 @@
   position: relative;
   z-index: 5;
   animation: laptick-site-scroll-up both linear;
-  animation-timeline: --laptop;
-  animation-range: cover 80% cover 100%;
+  animation-timeline: scroll(root);
+  animation-range: 240vh 300vh;
 }
 
 @keyframes laptick-site-scroll-up {
