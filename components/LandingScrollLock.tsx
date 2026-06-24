@@ -31,7 +31,7 @@ export function LandingScrollLock() {
         frame = 0
         const snapPoint = getSnapPoint()
 
-        if (!locked && normalSite.getBoundingClientRect().top <= snapPoint) {
+        if (!locked && window.scrollY > 500 && normalSite.getBoundingClientRect().top <= snapPoint) {
           lockToWebsite()
           return
         }

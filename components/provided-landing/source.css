@@ -461,10 +461,10 @@
 
 @keyframes scene-zoom {
   0% {
-    scale: 1;
+    transform: scale(1);
   }
   to {
-    scale: 15;
+    transform: scale(15);
   }
 }
 
@@ -546,7 +546,7 @@
   z-index: 5;
   animation: laptick-site-scroll-up both linear;
   animation-timeline: scroll(root);
-  animation-range: 240vh 300vh;
+  animation-range: 280vh 300vh;
 }
 
 @keyframes laptick-site-scroll-up {
