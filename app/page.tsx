@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className="exact-animation-home">
+    <div className="exact-animation-home exact-animation-home-landing">
       <ProvidedLandingPage />
     </div>
   )

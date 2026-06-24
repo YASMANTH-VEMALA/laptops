@@ -14,12 +14,12 @@
   --accent: hsl(10 90% 50%);
   --laptick-lime: #d9ff3f;
   --laptick-cyan: #00d5ff;
-  --jump: cover 15% cover 45%;
-  --spin: cover 15% cover 45%;
-  --flip: cover 15% cover 45%;
-  --open: cover 15% cover 45%;
-  --straighten: contain 25% contain 65%;
-  --zoom: contain 25% exit -20%;
+  --jump: cover 25% cover 55%;
+  --spin: cover 25% cover 55%;
+  --flip: cover 25% cover 55%;
+  --open: cover 25% cover 55%;
+  --straighten: cover 35% cover 65%;
+  --zoom: cover 60% cover 90%;
   overscroll-behavior: none;
 }
 
@@ -103,7 +103,7 @@
 }
 
 .laptop {
-  height: 500vh;
+  height: 300vh;
   view-timeline: --laptop;
   position: sticky;
   top: 0;
@@ -167,7 +167,7 @@
 }
 
 @keyframes book-flip {
-  0%, 20% {
+  0%, 5.5% {
     transform: rotateX(0deg);
   }
   80%, 100% {
@@ -243,8 +243,9 @@
 
 .laptick-screen-face {
   background:
-    radial-gradient(circle at 12% 12%, rgb(217 255 63 / 0.34), transparent 28%),
-    linear-gradient(135deg, #fbfbf4 0 58%, #ededdf 58% 100%);
+    radial-gradient(circle at 12% 10%, rgb(217 255 63 / 0.45), transparent 1.6rem),
+    radial-gradient(circle at 88% 16%, rgb(0 213 255 / 0.22), transparent 1.46rem),
+    #fbfbf4;
   border: 0.16vmin solid hsl(0 0% 8%);
   color: var(--black);
   display: grid;
@@ -262,6 +263,7 @@
 .laptick-screen-face nav {
   align-items: center;
   border: 0.08vmin solid var(--black);
+  box-shadow: 0.24vmin 0.24vmin 0 var(--black);
   display: flex;
   gap: 0.3vmin;
   font-size: 0.32vmin;
@@ -281,7 +283,7 @@
   max-width: 82%;
 }
 
-.screen-hero p,
+.screen-hero p.eyebrow,
 .screen-grid span {
   color: hsl(0 0% 30%);
   font-size: 0.28vmin;
@@ -289,6 +291,16 @@
   letter-spacing: 0.08em;
   margin: 0;
   text-transform: uppercase;
+}
+
+.screen-hero p.description {
+  color: hsl(0 0% 28%);
+  font-size: 0.28vmin;
+  line-height: 1.55;
+  margin: 0.2vmin 0 0.4vmin;
+  max-width: 90%;
+  text-transform: none;
+  font-weight: 400;
 }
 
 .screen-hero h2 {
@@ -303,11 +315,12 @@
 .screen-hero button {
   background: var(--laptick-lime);
   border: 0.08vmin solid var(--black);
-  box-shadow: 0.14vmin 0.14vmin 0 var(--black);
+  box-shadow: 0.24vmin 0.24vmin 0 var(--black);
   color: var(--black);
   font-size: 0.32vmin;
-  font-weight: 900;
-  padding: 0.16vmin 0.3vmin;
+  font-weight: 950;
+  padding: 0.22vmin 0.3vmin;
+  cursor: pointer;
 }
 
 .screen-grid {
@@ -317,9 +330,9 @@
 }
 
 .screen-grid article {
-  background: rgb(255 255 255 / 0.86);
+  background: white;
   border: 0.08vmin solid var(--black);
-  box-shadow: 0.12vmin 0.12vmin 0 var(--black);
+  box-shadow: 0.24vmin 0.24vmin 0 var(--black);
   min-width: 0;
   padding: 0.2vmin;
 }
@@ -328,6 +341,15 @@
   display: block;
   font-size: 0.34vmin;
   line-height: 1.05;
+}
+
+.screen-grid p {
+  color: hsl(0 0% 28%);
+  font-size: 0.22vmin;
+  line-height: 1.45;
+  margin: 0.1vmin 0 0;
+  text-transform: none;
+  font-weight: 400;
 }
 
 .laptop-keyboard {
@@ -442,7 +464,7 @@
     scale: 1;
   }
   to {
-    scale: 9;
+    scale: 15;
   }
 }
 
@@ -470,7 +492,7 @@
 }
 
 @keyframes book-open-top {
-  0%, 30% {
+  0%, 5.5% {
     transform: rotateX(0deg);
   }
   40% {
@@ -482,7 +504,7 @@
 }
 
 @keyframes book-open-bottom {
-  0%, 45% {
+  0%, 5.5% {
     transform: rotateX(0deg);
   }
   65% {
@@ -522,6 +544,11 @@
   padding: clamp(1rem, 2vw, 2rem);
   position: relative;
   z-index: 5;
+}
+
+body:not(.laptick-site-mode) .laptick-normal-site {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .site-nav {
@@ -564,11 +591,11 @@
 
 .normal-hero h2 {
   font-family: "EB Garamond", serif;
-  font-size: clamp(3.5rem, 10vw, 9.5rem);
+  font-size: clamp(2.25rem, 5vw, 4rem);
   font-weight: 800;
-  letter-spacing: 0;
-  line-height: 0.82;
-  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+  margin: 0 0 1.5rem;
 }
 
 .normal-hero > p:not(.eyebrow) {
@@ -752,11 +779,14 @@ body.laptick-site-mode .bear-link {
 }
 
 body.laptick-site-mode .scroll-section.laptop {
-  height: 0;
-  min-height: 0;
-  overflow: hidden;
   pointer-events: none;
-  visibility: hidden;
+  animation: laptick-laptop-hide 1s step-end forwards;
+}
+
+@keyframes laptick-laptop-hide {
+  to {
+    visibility: hidden;
+  }
 }
 
 body.laptick-site-mode .scene__zoom,
@@ -772,6 +802,19 @@ body.laptick-site-mode .shell--bottom {
 body.laptick-site-mode .laptick-normal-site {
   min-height: calc(100vh + 240px);
   scroll-margin-top: 0;
+  animation: laptick-site-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes laptick-site-reveal {
+  from {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Education Section */
@@ -1016,3 +1059,111 @@ body.laptick-site-mode .laptick-normal-site {
     padding: 1.5rem;
   }
 }
+
+/* Manifesto Section */
+.manifesto-section {
+  background: linear-gradient(
+    135deg,
+    rgba(217, 255, 63, 0.07) 0%,
+    rgba(0, 213, 255, 0.04) 100%
+  );
+  border: 2px solid var(--black);
+  box-shadow: 6px 6px 0 var(--black);
+  padding: clamp(2rem, 5vw, 3.5rem);
+  max-width: min(980px, 100%);
+  margin: 3.5rem auto 2.5rem;
+}
+
+.manifesto-section .eyebrow {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 0.75rem;
+  color: hsl(0 0% 35%);
+}
+
+.manifesto-section h2 {
+  font-family: "EB Garamond", serif;
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+  margin: 0 0 1.25rem;
+}
+
+.manifesto-lead {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+  line-height: 1.6;
+  color: hsl(0 0% 20%);
+  margin-bottom: 2rem;
+}
+
+.manifesto-highlight {
+  background: white;
+  border: 2px solid var(--black);
+  box-shadow: 4px 4px 0 var(--black);
+  padding: 1.5rem;
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.manifesto-highlight .highlight-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.manifesto-highlight h3 {
+  font-family: "EB Garamond", serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+}
+
+.manifesto-highlight p {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: hsl(0 0% 25%);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.manifesto-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.manifesto-badge {
+  background: white;
+  border: 2px solid var(--black);
+  box-shadow: 4px 4px 0 var(--black);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 0.5rem 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 760px) {
+  .manifesto-section {
+    padding: 1.5rem;
+    margin-inline: 1rem;
+    box-shadow: 4px 4px 0 var(--black);
+  }
+  .manifesto-highlight {
+    box-shadow: 3px 3px 0 var(--black);
+  }
+  .manifesto-highlight .highlight-icon {
+    display: none;
+  }
+  .manifesto-badge {
+    box-shadow: 3px 3px 0 var(--black);
+  }
+}
+
+

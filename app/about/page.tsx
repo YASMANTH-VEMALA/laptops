@@ -180,7 +180,7 @@ export default function AboutPage() {
           <p className="themed-card-body">
             No signup. No email. No ads. Just your top 3 laptops with honest explanations.
           </p>
-          <Link href="/laptops" className="themed-primary-action mt-3" style={{ background: 'hsl(0 0% 2%)', color: '#d9ff3f' }}>
+          <Link href="/find-my-laptop" className="themed-primary-action mt-3" style={{ background: 'hsl(0 0% 2%)', color: '#d9ff3f' }}>
             Find My Laptop <ArrowRight className="inline h-4 w-4" />
           </Link>
         </div>

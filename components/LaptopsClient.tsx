@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { Bot, Filter, Loader2, Minus, Search, Send, SlidersHorizontal, X } from 'lucide-react'
+import { Bot, Filter, Loader2, Search, SlidersHorizontal, X, Briefcase, Camera, ChevronDown, Code, Film, Gamepad2, GraduationCap, HelpCircle } from 'lucide-react'
 const Lottie = dynamic(() => import('lottie-react'), { ssr: false })
 import type { Laptop } from '@/types/laptop'
 
@@ -21,6 +22,37 @@ const USE_CASES = [
   { value: 'students', label: 'Students' },
   { value: 'content', label: 'Creator' },
 ]
+
+const ONBOARD_BUDGET_STEPS = [
+  { value: 30000, label: '₹30K', display: '₹30K' },
+  { value: 60000, label: '₹60K', display: '₹60K' },
+  { value: 90000, label: '₹90K', display: '₹90K' },
+  { value: 120000, label: '₹1.2L', display: '₹1.2L' },
+  { value: 150000, label: '₹1.5L', display: '₹1.5L' },
+  { value: 1000000, label: '1.5L+', display: '₹1.5L+' },
+]
+
+const ONBOARD_USE_CASES = [
+  { value: 'video-editing', label: 'Video Editing', icon: '🎬' },
+  { value: 'students', label: 'College', icon: '🎓' },
+  { value: 'gaming', label: 'Gaming', icon: '🎮' },
+  { value: 'business', label: 'Business', icon: '💼' },
+  { value: 'content', label: 'Content Creator', icon: '📸' },
+  { value: 'programming', label: 'Coding', icon: '💻' },
+]
+
+const USE_CASE_ICONS: Record<string, React.ReactNode> = {
+  all: <SlidersHorizontal className="h-4 w-4 text-foreground" />,
+  'video-editing': <Film className="h-4 w-4 text-foreground" />,
+  students: <GraduationCap className="h-4 w-4 text-foreground" />,
+  gaming: <Gamepad2 className="h-4 w-4 text-foreground" />,
+  business: <Briefcase className="h-4 w-4 text-foreground" />,
+  content: <Camera className="h-4 w-4 text-foreground" />,
+  programming: <Code className="h-4 w-4 text-foreground" />,
+  other: <HelpCircle className="h-4 w-4 text-foreground" />,
+}
+
+
 
 const USE_CASE_LABELS: Record<string, string> = {
   'video-editing': 'Video Editing',
@@ -43,11 +75,7 @@ function formatPrice(price: number) {
 }
 
 
-type AgentMessage = {
-  id: string
-  role: 'user' | 'agent'
-  content: string
-}
+
 
 type WebLaptopResult = {
   position: number | null
@@ -110,57 +138,102 @@ export function LaptopsClient({ laptops }: LaptopsClientProps) {
   const [selectedBrand, setSelectedBrand] = useState<string>('all')
   const [selectedUseCase, setSelectedUseCase] = useState<string>('all')
   const [maxPrice, setMaxPrice] = useState<number | null>(null)
-  const [agentInput, setAgentInput] = useState('')
-  const [agentLoading, setAgentLoading] = useState(false)
-  const [agentMinimized, setAgentMinimized] = useState(false)
+
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // Onboarding Preference states
+  const [hasOnboarded, setHasOnboarded] = useState(false)
+  const [onboardBudgetIndex, setOnboardBudgetIndex] = useState(5) // default to ₹1.5L+
+  const [onboardUseCase, setOnboardUseCase] = useState('all') // default to All Use Cases
+  const [customUseCaseText, setCustomUseCaseText] = useState('')
+  const catalogRef = useRef<HTMLDivElement>(null)
+  const initializedRef = useRef(false)
+
+  useEffect(() => {
+    if (initializedRef.current) return
+
+    const budgetParam = searchParams.get('budget')
+    const purposeParam = searchParams.get('purpose')
+    const purposeTypeParam = searchParams.get('purpose_type')
+    const customParam = searchParams.get('custom')
+
+    if (budgetParam && purposeParam) {
+      initializedRef.current = true
+      const budgetVal = Number(budgetParam)
+      setMaxPrice(budgetVal)
+      setSelectedUseCase(purposeParam)
+      setSearchQuery('')
+      setHasOnboarded(true)
+
+      // Find index
+      const idx = ONBOARD_BUDGET_STEPS.findIndex((s) => s.value === budgetVal)
+      if (idx !== -1) setOnboardBudgetIndex(idx)
+
+      if (purposeTypeParam) setOnboardUseCase(purposeTypeParam)
+      if (customParam) setCustomUseCaseText(customParam)
+
+
+    }
+  }, [searchParams])
+
+  // Sync state changes back to URL search params silently
+  useEffect(() => {
+    const params = new URLSearchParams()
+    
+    if (maxPrice !== null) {
+      params.set('budget', String(maxPrice))
+    }
+    
+    if (selectedUseCase !== 'all') {
+      params.set('purpose', selectedUseCase)
+      params.set('purpose_type', selectedUseCase)
+    } else if (onboardUseCase === 'other') {
+      params.set('purpose', 'all')
+      params.set('purpose_type', 'other')
+      if (customUseCaseText) params.set('custom', customUseCaseText)
+    }
+
+    const queryString = params.toString()
+    const newUrl = queryString ? `/laptops?${queryString}` : '/laptops'
+    
+    window.history.replaceState(null, '', newUrl)
+  }, [maxPrice, selectedUseCase, onboardUseCase, customUseCaseText])
+  
+  // Sync maxPrice back to onboarding slider
+  useEffect(() => {
+    if (maxPrice !== null) {
+      const idx = ONBOARD_BUDGET_STEPS.findIndex((s) => s.value === maxPrice)
+      if (idx !== -1) {
+        setOnboardBudgetIndex(idx)
+      } else {
+        setOnboardBudgetIndex(5) // default to 1.5L+
+      }
+    } else {
+      setOnboardBudgetIndex(5) // default to 1.5L+
+    }
+  }, [maxPrice])
+
+  // Sync selectedUseCase back to onboarding use case selector
+  useEffect(() => {
+    if (selectedUseCase !== 'all') {
+      setOnboardUseCase(selectedUseCase)
+    } else if (onboardUseCase !== 'other') {
+      setOnboardUseCase('all')
+    }
+  }, [selectedUseCase])
+
   const [webResults, setWebResults] = useState<WebLaptopResult[]>([])
   const [webSearchQuery, setWebSearchQuery] = useState('')
   const [webSearchLoading, setWebSearchLoading] = useState(false)
   const [webSearchError, setWebSearchError] = useState<string | null>(null)
   const [selectedWebResult, setSelectedWebResult] = useState<WebLaptopResult | null>(null)
-  const [agentSummary, setAgentSummary] = useState('Showing the full laptop table.')
   const [selectedLocalLaptop, setSelectedLocalLaptop] = useState<Laptop | null>(null)
-  const [agentMessages, setAgentMessages] = useState<AgentMessage[]>([
-    {
-      id: 'welcome',
-      role: 'agent',
-      content: 'Ask me to show data here: "show gaming laptops under 80k", "Lenovo coding laptops", or "OLED laptops".',
-    },
-  ])
-  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const [isDiscoveryRunning, setIsDiscoveryRunning] = useState(false)
   const [discoveryStatus, setDiscoveryStatus] = useState<string | null>(null)
 
-  // Escapes HTML tags to prevent XSS vulnerabilities
-  function escapeHtml(text: string) {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-  }
 
-  // Format markdown-like text simply and safely
-  function formatContent(text: string) {
-    const escaped = escapeHtml(text)
-    return escaped
-      .split('\n')
-      .map((line, i) => {
-        // Bold
-        let processed = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        // Italic
-        processed = processed.replace(/\*(.+?)\*/g, '<em>$1</em>')
-        // Bullet points
-        if (processed.startsWith('- ') || processed.startsWith('• ')) {
-          return `<div class="ai-bullet" key="${i}">${processed.slice(2)}</div>`
-        }
-        if (processed.trim() === '') return '<br/>'
-        return `<p>${processed}</p>`
-      })
-      .join('')
-  }
 
   async function handleTriggerDiscovery() {
     if (isDiscoveryRunning) return
@@ -191,7 +264,7 @@ export function LaptopsClient({ laptops }: LaptopsClientProps) {
     Number(Boolean(searchQuery.trim())) +
     Number(selectedBrand !== 'all') +
     Number(selectedUseCase !== 'all') +
-    Number(maxPrice !== null)
+    Number(maxPrice !== null && maxPrice < 1000000)
 
   const filteredLaptops = useMemo(() => {
     let filtered = laptops
@@ -228,9 +301,7 @@ export function LaptopsClient({ laptops }: LaptopsClientProps) {
     return filtered
   }, [laptops, searchQuery, selectedBrand, selectedUseCase, maxPrice])
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  }, [agentMessages, agentLoading])
+
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -267,7 +338,10 @@ export function LaptopsClient({ laptops }: LaptopsClientProps) {
     setWebSearchQuery('')
     setWebSearchError(null)
     setSelectedWebResult(null)
-    setAgentSummary('Showing the full laptop table.')
+    setHasOnboarded(false)
+    setOnboardBudgetIndex(5)
+    setOnboardUseCase('all')
+    router.push('/laptops')
   }
 
   async function searchWebLaptops(queryOverride?: string, maxPriceOverride = maxPrice) {
@@ -306,366 +380,166 @@ export function LaptopsClient({ laptops }: LaptopsClientProps) {
     }
   }
 
-  function extractBudget(text: string) {
-    const lower = text.toLowerCase()
-    const lakh = lower.match(/(?:under|below|less than|upto|up to|budget)?\s*(\d+(?:\.\d+)?)\s*(lakh|lac)/)
-    if (lakh) return Math.round(Number(lakh[1]) * 100000)
-
-    const thousand = lower.match(/(?:under|below|less than|upto|up to|budget)?\s*(\d+)\s*(k|thousand)/)
-    if (thousand) return Number(thousand[1]) * 1000
-
-    const rupees = lower.match(/(?:under|below|less than|upto|up to|budget)?\s*₹?\s*(\d[\d,]{4,})/)
-    if (rupees) {
-      const budget = Number(rupees[1].replace(/,/g, ''))
-      // Only treat it as budget if it's a realistic INR price range for laptops (15k - 500k)
-      if (budget >= 15000 && budget <= 500000) return budget
-    }
-
-    return null
-  }
-
-  function runAgent(text: string) {
-    const lower = text.toLowerCase()
-    const brand = TOP_BRANDS.find((item) => lower.includes(item.toLowerCase()))
-    
-    // Match useCase against labels OR values
-    const useCase = USE_CASES.find(
-      (item) =>
-        item.value !== 'all' &&
-        (lower.includes(item.label.toLowerCase()) || lower.includes(item.value.toLowerCase()))
-    )
-    const budget = extractBudget(text)
-
-    // Dynamic keyword search query extraction
-    let queryCleaned = lower
-    if (brand) {
-      queryCleaned = queryCleaned.replace(brand.toLowerCase(), '')
-    }
-    if (useCase) {
-      queryCleaned = queryCleaned.replace(useCase.label.toLowerCase(), '')
-      queryCleaned = queryCleaned.replace(useCase.value.toLowerCase(), '')
-    }
-    const noiseWords = ['laptop', 'laptops', 'show', 'find', 'best', 'me', 'with', 'under', 'below', 'above', 'budget', 'for', 'about', 'and', 'buy', 'get']
-    noiseWords.forEach((word) => {
-      const regex = new RegExp(`\\b${word}\\b`, 'g')
-      queryCleaned = queryCleaned.replace(regex, '')
-    })
-    // Strip budget patterns
-    queryCleaned = queryCleaned.replace(/(?:under|below|less than|upto|up to|budget)?\s*\d+(?:\.\d+)?\s*(lakh|lac|k|thousand)/g, '')
-    queryCleaned = queryCleaned.replace(/₹?\s*\d[\d,]{4,}/g, '')
-    
-    const nextSearch = queryCleaned.replace(/\s+/g, ' ').trim()
-
-    setSelectedBrand(brand ?? 'all')
-    setSelectedUseCase(useCase?.value ?? 'all')
-    setMaxPrice(budget)
-    setSearchQuery(nextSearch)
-
-    const preview = laptops.filter((laptop) => {
-      if (brand && laptop.brand !== brand) return false
-      if (useCase && !laptop.best_for.includes(useCase.value as never)) return false
-      if (budget && laptop.price_inr > budget) return false
-      const haystack = `${laptop.name} ${laptop.cpu_model} ${laptop.gpu_model} ${laptop.display_type} ${laptop.ram_gb}gb`.toLowerCase()
-      if (nextSearch && !haystack.includes(nextSearch)) return false
-      return true
-    })
-
-    const labelParts = [
-      brand,
-      useCase?.label,
-      budget ? `under ₹${budget.toLocaleString('en-IN')}` : null,
-      nextSearch ? `matching ${nextSearch.toUpperCase()}` : null,
-    ].filter(Boolean)
-
-    const summary = labelParts.length
-      ? `Agent filtered ${preview.length} laptops: ${labelParts.join(', ')}.`
-      : `Agent reset the view and is showing all ${laptops.length} laptops.`
-
-    return summary
-  }
-
-  async function sendAgentMessage(messageText?: string) {
-    const text = (messageText ?? agentInput).trim()
-    if (!text || agentLoading) return
-
-    setAgentInput('')
-    setAgentMinimized(false)
-    setAgentMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text }])
-
-    // Check if the user is asking to reset or clear
-    const isReset = /^\s*(reset|clear|show\s+all)\s*$/i.test(text)
-    if (isReset) {
-      resetFilters()
-      setWebResults([])
-      setWebSearchQuery('')
-      setAgentMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now()}`,
-          role: 'agent',
-          content: 'I have reset the filters and cleared the web search results for you. Showing all laptops.',
-        },
-      ])
-      return
-    }
-
-    const actionSummary = runAgent(text)
-    const agentBudget = extractBudget(text)
-    const webSearchPromise = searchWebLaptops(text, agentBudget)
-    setAgentLoading(true)
-
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            ...agentMessages.map((message) => ({
-              role: message.role === 'user' ? 'user' : 'assistant',
-              content: message.content,
-            })),
-            { role: 'user', content: text },
-          ],
-        }),
-      })
-      const data = await res.json()
-      await webSearchPromise
-      const reply = res.ok ? data.reply : 'I have filtered the list of laptops for you.'
-      setAgentMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now()}`,
-          role: 'agent',
-          content: reply,
-        },
-      ])
-    } catch {
-      await webSearchPromise
-      const cleanSummary = actionSummary
-        .replace('Agent filtered ', 'Filtered to ')
-        .replace('Agent reset the view and is showing ', 'Showing ')
-      
-      setAgentMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now()}`,
-          role: 'agent',
-          content: `${cleanSummary}\n\n(Note: The chat assistant is currently rate-limited, but your filters and web listings have been updated below!)`,
-        },
-      ])
-    } finally {
-      setAgentLoading(false)
-    }
-  }
-
   return (
     <div className="laptops-browser">
       {/* AI Agent at the Center Bottom */}
-      {agentMinimized ? (
-        <button
-          type="button"
-          className="agent-launcher-right"
-          onClick={() => setAgentMinimized(false)}
-          aria-label="Open AI Agent"
-        >
-          <Bot className="h-4 w-4" />
-          <span>Ask AI Agent</span>
-        </button>
-      ) : (
-        <div className="agent-card" role="dialog" aria-label="Laptick AI Agent">
-          <div className="agent-card__box">
-            {/* Header */}
-            <div className="agent-card__header">
-              <div className="agent-card__header-left">
-                <div className="agent-card__icon"><Bot className="h-3.5 w-3.5" /></div>
-                <span className="agent-card__title">Laptick AI Agent</span>
-              </div>
-              <div className="agent-card__header-actions">
-                <button
-                  type="button"
-                  onClick={() => setAgentMinimized(true)}
-                  aria-label="Minimize agent"
-                  title="Minimize"
-                >
-                  <Minus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
+      <button
+        type="button"
+        className="agent-launcher-right"
+        onClick={() => router.push('/chat')}
+        aria-label="Open AI Agent"
+      >
+        <Bot className="h-4 w-4" />
+        <span>Ask AI Agent</span>
+      </button>
 
-            {/* Card Body */}
-            <div className="agent-card__body">
-              {/* Messages log */}
-              <div className="agent-messages">
-                {agentMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`agent-message agent-message--${message.role}`}
-                    dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
-                  />
-                ))}
-                {agentLoading && (
-                  <div className="agent-message agent-message--agent flex items-center gap-2">
-                    <span>Thinking and checking specs</span>
-                    <div className="ai-typing inline-flex" style={{ padding: 0, height: 'auto', gap: '3px' }}>
-                      <span /><span /><span />
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
 
-              {/* Input Area */}
-              <div className="agent-card__input-area">
-                <div className="agent-quick-row">
-                  {['gaming under 80k', 'coding under 60k', 'show Lenovo', 'OLED laptops'].map((prompt) => (
-                    <button key={prompt} type="button" onClick={() => sendAgentMessage(prompt)}>
-                      {prompt}
+
+
+      <section ref={catalogRef} className="border-2 border-foreground bg-background p-4 shadow-[6px_6px_0_var(--foreground)]">
+        <div className="mb-4">
+          <p className="font-mono text-[0.68rem] font-black uppercase tracking-[0.16em] text-muted-foreground">
+            Laptop Catalog & Live Results
+          </p>
+          <h2 className="text-xl font-black">
+            {searchQuery ? `Results for "${searchQuery}"` : 'All Laptops'}
+          </h2>
+
+          <div className="mt-4 border-2 border-foreground bg-background p-4 rounded-lg shadow-[3px_3px_0_var(--foreground)] mb-6 animate-fade-in">
+            {/* Budget Selector */}
+            <div className="onboard-section mb-6">
+              <div className="flex justify-between items-end mb-2">
+                <p className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Budget Limit: <span className="font-black text-[#0000ff] text-base ml-1">{ONBOARD_BUDGET_STEPS[onboardBudgetIndex].display}</span>
+                </p>
+              </div>
+              
+              <div className="onboard-slider-container relative px-1">
+                {/* Slider Track and ticks */}
+                <div className="onboard-slider-track-ticks flex justify-between absolute w-[calc(100%-1rem)] left-[0.5rem] top-[14px] -translate-y-1/2 pointer-events-none">
+                  {ONBOARD_BUDGET_STEPS.map((step, idx) => (
+                    <span 
+                      key={idx} 
+                      className={`w-3 h-3 rounded-full border-2 border-foreground transition ${
+                        idx <= onboardBudgetIndex ? 'bg-[#0000ff]' : 'bg-background'
+                      }`} 
+                    />
+                  ))}
+                </div>
+                
+                {/* Actual Input Range */}
+                <input
+                  type="range"
+                  min="0"
+                  max={ONBOARD_BUDGET_STEPS.length - 1}
+                  step="1"
+                  value={onboardBudgetIndex}
+                  onChange={(e) => {
+                    const idx = Number(e.target.value)
+                    setOnboardBudgetIndex(idx)
+                    setMaxPrice(ONBOARD_BUDGET_STEPS[idx].value)
+                  }}
+                  className="w-full relative z-10 opacity-0 cursor-pointer h-7"
+                />
+                
+                {/* Visual Slider Cover / Track line */}
+                <div className="onboard-slider-line absolute left-4 right-4 top-[14px] -translate-y-1/2 h-1 bg-foreground/20 pointer-events-none -z-10" />
+                <div 
+                  className="onboard-slider-fill absolute left-4 top-[14px] -translate-y-1/2 h-1 bg-[#0000ff] pointer-events-none -z-10 transition-all duration-150" 
+                  style={{ width: `calc(${(onboardBudgetIndex / (ONBOARD_BUDGET_STEPS.length - 1)) * 100}% - 1rem)` }}
+                />
+                
+                {/* Custom thumb */}
+                <div 
+                  className="onboard-slider-thumb absolute top-[14px] -translate-y-1/2 w-5.5 h-5.5 rounded-full bg-[#0000ff] border-4 border-white shadow-[0_0_0_2px_var(--foreground)] pointer-events-none -translate-x-1/2 transition-all duration-150"
+                  style={{ left: `calc(1rem + ${(onboardBudgetIndex / (ONBOARD_BUDGET_STEPS.length - 1)) * 100}% - ${(onboardBudgetIndex / (ONBOARD_BUDGET_STEPS.length - 1)) * 2}rem)` }}
+                />
+
+                {/* Labels */}
+                <div className="flex justify-between mt-2.5 text-[0.68rem] font-bold text-muted-foreground font-mono">
+                  {ONBOARD_BUDGET_STEPS.map((step, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setOnboardBudgetIndex(idx)
+                        setMaxPrice(step.value)
+                      }}
+                      className={`transition hover:text-foreground ${
+                        idx === onboardBudgetIndex ? 'text-[#0000ff] font-black scale-105' : ''
+                      }`}
+                    >
+                      {step.label}
                     </button>
                   ))}
                 </div>
-
-                <div className="agent-input-row">
-                  <textarea
-                    value={agentInput}
-                    onChange={(event) => setAgentInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' && !event.shiftKey) {
-                        event.preventDefault()
-                        sendAgentMessage()
-                      }
-                    }}
-                    placeholder="Ask about laptops (e.g. gaming under 80k)..."
-                    rows={1}
-                  />
-                  <button type="button" onClick={() => sendAgentMessage()} disabled={!agentInput.trim() || agentLoading}>
-                    <Send className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <p className="agent-card__disclaimer">
-                  AI can make mistakes. Verify specs before purchasing.
-                </p>
               </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      <section className="space-y-5">
-        <div className="border-2 border-foreground bg-background p-3 shadow-[6px_6px_0_var(--foreground)]">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-foreground/40" />
-              <input
-                type="text"
-                placeholder="Search laptops, chips, GPUs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault()
-                    searchWebLaptops()
-                  }
-                }}
-                className="h-14 w-full border-2 border-foreground bg-background pl-12 pr-4 text-base font-bold text-foreground outline-none placeholder:text-foreground/40 focus:bg-primary/20"
-              />
-            </div>
+            <div className="border-t border-foreground/10 my-4" />
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:items-center">
-              <label className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/45">
-                  <Filter className="h-4 w-4" />
-                </span>
-                <select
-                  value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="h-14 min-w-full cursor-pointer appearance-none border-2 border-foreground bg-background pl-11 pr-11 text-sm font-black text-foreground outline-none focus:bg-primary/20 sm:min-w-[210px]"
-                >
-                  <option value="all">All brands</option>
-                  {TOP_BRANDS.map((brand) => (
-                    <option key={brand} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-                  <option value="other">Other brands</option>
-                </select>
-                <SlidersHorizontal className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/45" />
-              </label>
+            {/* Purpose Dropdown Selector */}
+            <div className="onboard-section">
+              <p className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.16em] text-muted-foreground mb-3.5">
+                Purpose / Use Case
+              </p>
+              
+              <div className="flex items-center gap-3">
+                <div className="border-2 border-foreground bg-primary p-2.5 shadow-[2px_2px_0_var(--foreground)] rounded-md flex items-center justify-center">
+                  {USE_CASE_ICONS[onboardUseCase] || <HelpCircle className="h-4 w-4 text-foreground" />}
+                </div>
+                <div className="relative flex-1 max-w-[280px]">
+                  <select
+                    value={onboardUseCase}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setOnboardUseCase(val)
+                      if (val === 'other' || val === 'all') {
+                        setSelectedUseCase('all')
+                      } else {
+                        setSelectedUseCase(val)
+                      }
+                    }}
+                    className="w-full appearance-none border-2 border-foreground bg-background px-4 py-2 text-xs font-black uppercase tracking-[0.08em] shadow-[2px_2px_0_var(--foreground)] outline-none cursor-pointer rounded-md pr-10"
+                  >
+                    <option value="all">All Use Cases</option>
+                    <option value="gaming">Gaming</option>
+                    <option value="programming">Coding</option>
+                    <option value="video-editing">Video Editing</option>
+                    <option value="business">Business</option>
+                    <option value="students">College</option>
+                    <option value="content">Content Creator</option>
+                    <option value="other">Other...</option>
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
+                </div>
+              </div>
 
-              <select
-                value={selectedUseCase}
-                onChange={(e) => setSelectedUseCase(e.target.value)}
-                className="h-14 min-w-full cursor-pointer border-2 border-foreground bg-background px-4 text-sm font-black text-foreground outline-none focus:bg-primary/20 sm:min-w-[180px]"
-              >
-                {USE_CASES.map((useCase) => (
-                  <option key={useCase.value} value={useCase.value}>
-                    {useCase.label}
-                  </option>
-                ))}
-              </select>
-
-              {activeFilters > 0 && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="inline-flex h-14 items-center justify-center gap-2 border-2 border-foreground bg-primary px-5 text-sm font-black text-foreground shadow-[4px_4px_0_var(--foreground)] transition hover:-translate-x-0.5 hover:-translate-y-0.5"
-                >
-                  <X className="h-4 w-4" />
-                  Reset
-                </button>
+              {onboardUseCase === 'other' && (
+                <div className="mt-3.5 animate-fade-in">
+                  <input
+                    type="text"
+                    value={customUseCaseText}
+                    onChange={(e) => setCustomUseCaseText(e.target.value)}
+                    placeholder="Specify your custom use case (e.g. music production)"
+                    className="w-full max-w-md border-2 border-foreground bg-background px-3 py-2 text-xs font-semibold shadow-[2px_2px_0_var(--foreground)] focus:outline-none"
+                  />
+                </div>
               )}
+            </div>
+          </div>
 
+          {!webSearchLoading && (filteredLaptops.length > 0 || webResults.length > 0) && activeFilters > 0 && (
+            <div className="mt-3">
               <button
                 type="button"
-                onClick={() => searchWebLaptops()}
-                disabled={!searchQuery.trim() || webSearchLoading}
-                className="inline-flex h-14 items-center justify-center gap-2 border-2 border-foreground bg-accent px-5 text-sm font-black text-accent-foreground shadow-[4px_4px_0_var(--foreground)] transition hover:-translate-x-0.5 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={resetFilters}
+                className="text-xs font-black uppercase tracking-wider underline hover:text-destructive transition"
               >
-                <Search className="h-4 w-4" />
-                {webSearchLoading ? 'Searching...' : 'Search web'}
+                Clear filters
               </button>
             </div>
-          </div>
-        </div>
-
-      <section className="border-2 border-foreground bg-background p-4 shadow-[6px_6px_0_var(--foreground)]">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="font-mono text-[0.68rem] font-black uppercase tracking-[0.16em] text-muted-foreground">
-              Laptop Catalog & Live Results
-            </p>
-            <h2 className="text-xl font-black">
-              {searchQuery ? `Results for "${searchQuery}"` : 'All Laptops'}
-            </h2>
-            <p className="mt-1 max-w-3xl text-xs font-bold leading-5 text-muted-foreground">
-              Showing verified catalog specifications and live unverified marketplace listings.
-            </p>
-            {!webSearchLoading && (filteredLaptops.length > 0 || webResults.length > 0) && (
-              <p className="mt-3 text-sm font-semibold text-muted-foreground">
-                Showing <span className="text-foreground">{filteredLaptops.length}</span> verified and <span className="text-foreground">{webResults.length}</span> marketplace laptops
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {discoveryStatus && (
-              <span className="border border-foreground bg-secondary px-2.5 py-1 text-xs font-bold text-foreground animate-pulse">
-                {discoveryStatus}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={handleTriggerDiscovery}
-              disabled={isDiscoveryRunning}
-              className="border-2 border-foreground bg-accent px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-accent-foreground shadow-[3px_3px_0_var(--foreground)] transition hover:-translate-x-0.5 hover:-translate-y-0.5 disabled:opacity-50"
-              title="Trigger manual weekly discovery and ingestion"
-            >
-              {isDiscoveryRunning ? 'Running...' : 'Trigger AI Discovery'}
-            </button>
-            <p className="border-2 border-foreground bg-primary px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-foreground">
-              Prices updated weekly
-            </p>
-          </div>
+          )}
         </div>
 
         {webSearchLoading && (
@@ -1033,7 +907,7 @@ export function LaptopsClient({ laptops }: LaptopsClientProps) {
         </div>,
         document.body
       )}
-      </section>
     </div>
+
   )
 }

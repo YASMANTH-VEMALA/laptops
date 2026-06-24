@@ -137,7 +137,7 @@ Keep responses concise (2-4 paragraphs max) unless asked for detail. Use bullet 
       contents,
       config: {
         systemInstruction: systemPrompt,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
         temperature: 0.7,
       },
     })

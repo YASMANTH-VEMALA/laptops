@@ -7,19 +7,24 @@ import type { ProductBlurb } from './blurb'
  * Fetch search cache hit
  */
 export async function getCacheHit(queryHash: string) {
-  const supabase = getServiceClient()
-  const { data, error } = await supabase
-    .from('search_cache')
-    .select('result_product_ids, normalized_query, fetched_at, hit_count')
-    .eq('query_hash', queryHash)
-    .single()
+  try {
+    const supabase = getServiceClient()
+    const { data, error } = await supabase
+      .from('search_cache')
+      .select('result_product_ids, normalized_query, fetched_at, hit_count')
+      .eq('query_hash', queryHash)
+      .single()
 
-  if (error) {
-    if (error.code === 'PGRST116') return null // No rows
-    throw error
+    if (error) {
+      if (error.code === 'PGRST116' || error.code === 'PGRST205') return null // No rows or table does not exist
+      throw error
+    }
+
+    return data
+  } catch (err: any) {
+    console.warn('[db.ts] getCacheHit failed (non-critical, falling back to direct search):', err.message || err)
+    return null
   }
-
-  return data
 }
 
 /**
@@ -69,7 +74,7 @@ export async function getProductsByIds(ids: string[]) {
 
   const supabase = getServiceClient()
   const { data, error } = await supabase
-    .from('products')
+    .from('laptops')
     .select('*')
     .in('id', ids)
 
@@ -78,7 +83,26 @@ export async function getProductsByIds(ids: string[]) {
     throw error
   }
 
-  return data || []
+  // Map laptops to the format expected by the products schema
+  return (data || []).map((l: any) => ({
+    id: l.id,
+    title: l.name,
+    brand: l.brand,
+    price: l.price_inr,
+    rating: 4.5,
+    reviews_count: 120,
+    image_url: l.image_url,
+    product_url: l.affiliate_amazon_in,
+    specs: {
+      cpu: `${l.cpu_brand} ${l.cpu_model}`,
+      ram: `${l.ram_gb}GB ${l.ram_type}`,
+      storage: `${l.storage_gb}GB ${l.storage_type}`,
+      display: `${l.display_size}" ${l.display_type} ${l.display_hz}Hz`,
+      os: l.os_support,
+    },
+    use_case_tags: l.best_for || [],
+    why_text: l.pros || 'Excellent performance and high reliability.',
+  }))
 }
 
 /**

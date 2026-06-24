@@ -190,7 +190,7 @@ export default function BlogPage() {
           <p className="themed-card-body">
             Answer 5 questions — get your perfect top 3 picks with full spec explanations in 10 seconds.
           </p>
-          <Link href="/laptops" className="themed-primary-action mt-3" style={{ background: 'hsl(0 0% 2%)', color: '#d9ff3f' }}>
+          <Link href="/find-my-laptop" className="themed-primary-action mt-3" style={{ background: 'hsl(0 0% 2%)', color: '#d9ff3f' }}>
             Find My Laptop <ArrowRight className="inline h-4 w-4" />
           </Link>
         </div>

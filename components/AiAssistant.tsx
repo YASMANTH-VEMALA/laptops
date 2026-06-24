@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 
 interface Message {
   id: string
@@ -17,6 +18,9 @@ const QUICK_PROMPTS = [
 ]
 
 export function AiAssistant() {
+  const pathname = usePathname()
+  const isHidden = pathname === '/about' || pathname === '/blog' || pathname?.startsWith('/blog/') || pathname === '/chat'
+
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -130,6 +134,8 @@ export function AiAssistant() {
       })
       .join('')
   }
+
+  if (isHidden) return null
 
   return (
     <>

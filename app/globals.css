@@ -154,14 +154,18 @@ body {
   overflow: hidden;
 }
 
-body:has(.exact-animation-home) .site-header,
-body:has(.exact-animation-home) .site-footer {
+body:has(.exact-animation-home-landing) .site-header,
+body:has(.exact-animation-home-landing) .site-footer {
   display: none;
 }
 
 body:has(.laptops-agent-page) .ai-fab,
 body:has(.laptops-agent-page) .ai-panel {
   display: none;
+}
+
+body:has(.chat-page) {
+  overflow: hidden;
 }
 
 /* ── Brutalist site header ── */
@@ -709,32 +713,33 @@ body:has(.laptops-agent-page) .ai-panel {
 
 /* The input row */
 .agent-input-row {
-  align-items: flex-end;
+  align-items: center;
   display: flex;
   gap: 0.5rem;
+  padding-bottom: 3px;
+  padding-right: 3px;
 }
 
-.agent-input-row textarea {
+.agent-input-row input {
   background: var(--background);
   border: 2px solid var(--foreground);
+  box-shadow: 3px 3px 0 var(--foreground);
   color: var(--foreground);
   flex: 1;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  line-height: 1.45;
-  max-height: 100px;
+  height: 2.5rem;
   outline: none;
-  padding: 0.6rem 0.75rem;
-  resize: none;
+  padding: 0 0.85rem;
   transition: background 150ms ease;
 }
 
-.agent-input-row textarea:focus {
+.agent-input-row input:focus {
   background: color-mix(in srgb, var(--primary) 12%, var(--background));
 }
 
-.agent-input-row textarea::placeholder {
+.agent-input-row input::placeholder {
   color: var(--muted-foreground);
 }
 
@@ -802,7 +807,15 @@ body:has(.laptops-agent-page) .ai-panel {
 
   .agent-card {
     bottom: 0.5rem;
-    max-width: calc(100vw - 1rem);
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+    max-width: none;
+  }
+
+  .agent-launcher-right {
+    bottom: 0.5rem;
+    right: 0.5rem;
   }
 
   .agent-card__box {
@@ -2011,3 +2024,55 @@ body:has(.exact-animation-home) .ai-fab,
 body:has(.exact-animation-home) .ai-panel {
   display: none;
 }
+
+/* ── Onboarding Preferences Card & Slider Styles ── */
+
+.onboard-card {
+  border-radius: 16px;
+  background-color: var(--card, #ffffff);
+  border: 2px solid var(--foreground);
+}
+
+.onboard-budget-value {
+  font-family: var(--font-display, var(--font-sans)), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Make sure range input tracks nicely and is responsive */
+.onboard-slider-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+.onboard-slider-container input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { getServiceClient } from '@/lib/supabase'
 import { LaptopsClient } from '@/components/LaptopsClient'
 import type { Laptop } from '@/types/laptop'
@@ -27,7 +28,9 @@ export default async function LaptopsPage() {
   return (
     <div className="laptops-page laptops-agent-page">
       <div className="mx-auto max-w-[1500px] px-3 py-4 sm:px-5 lg:px-6">
-        <LaptopsClient laptops={laptops} />
+        <Suspense fallback={<div className="p-8 text-center font-bold font-mono">Loading Laptop Catalog...</div>}>
+          <LaptopsClient laptops={laptops} />
+        </Suspense>
 
         {laptops.length === 0 && (
           <div className="rounded-[2rem] border border-dashed border-foreground/20 bg-white p-12 text-center text-muted-foreground shadow-sm">
@@ -39,3 +42,4 @@ export default async function LaptopsPage() {
     </div>
   )
 }
+

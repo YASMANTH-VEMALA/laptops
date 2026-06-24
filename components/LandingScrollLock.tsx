@@ -12,7 +12,7 @@ export function LandingScrollLock() {
     let lastTouchY = 0
 
     const getLockY = () => Math.max(0, normalSite.offsetTop)
-    const getSnapPoint = () => Math.min(420, window.innerHeight * 0.38)
+    const getSnapPoint = () => 0
 
     const lockToWebsite = () => {
       locked = true
