@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { ProvidedLandingPage } from '@/components/ProvidedLandingPage'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Laptick',
   description: 'Laptick landing page.',
