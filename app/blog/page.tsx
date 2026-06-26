@@ -80,9 +80,9 @@ const ARTICLES = [
   { title: 'Best Laptops for Students Under ₹60,000 in India (2026)', tag: 'Students', slug: 'best-laptop-for-students-under-60k-india-2026', date: 'Published' },
   { title: 'Best Gaming Laptops Under ₹1,20,000 in India (2026)', tag: 'Gaming', slug: 'best-gaming-laptop-under-120000-india', date: 'Published' },
   { title: 'Best Laptops for Programming India', tag: 'Coding', slug: 'best-laptop-for-programming-india', date: 'Published' },
-  { title: 'Best Laptops for Video Editing Under ₹1,00,000 (2026)', tag: 'Video Editing', slug: null, date: 'Coming soon' },
-  { title: 'MacBook Air M4 vs Dell XPS 13: Which for Developers?', tag: 'Comparison', slug: null, date: 'Coming soon' },
-  { title: 'Why Your ₹80,000 Laptop Feels Slower Than a ₹50,000 One', tag: 'Explained', slug: null, date: 'Coming soon' },
+  { title: 'Best Laptops for Video Editing Under ₹1,00,000 (2026)', tag: 'Video Editing', slug: 'best-laptops-for-video-editing-under-100k-india-2026', date: 'Published' },
+  { title: 'MacBook Air M4 vs Dell XPS 13: Which for Developers?', tag: 'Comparison', slug: 'macbook-air-m4-vs-dell-xps-13-developers', date: 'Published' },
+  { title: 'Why Your ₹80,000 Laptop Feels Slower Than a ₹50,000 One', tag: 'Explained', slug: 'why-80k-laptop-feels-slower-than-50k-laptop', date: 'Published' },
 ]
 
 export default function BlogPage() {
@@ -144,13 +144,20 @@ export default function BlogPage() {
             <h2 className="themed-section-heading">Spec Decoder</h2>
             <p className="themed-body-text mt-2">The 6 specs that actually matter — explained simply.</p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-3">
             {SPEC_EXPLAINED.map((s) => (
-              <div key={s.term} className="themed-card space-y-2">
-                <p style={{ fontWeight: 800, fontSize: '0.95rem' }}>{s.term}</p>
-                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#00d5ff' }}>{s.simple}</p>
-                <p className="themed-card-body">{s.detail}</p>
-              </div>
+              <details key={s.term} className="themed-dropdown">
+                <summary className="themed-dropdown-summary">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                    <span className="themed-dropdown-summary-title">{s.term}</span>
+                    <span className="themed-dropdown-summary-simple">{s.simple}</span>
+                  </div>
+                  <span className="themed-dropdown-arrow">↓</span>
+                </summary>
+                <div className="themed-dropdown-content">
+                  <p className="themed-card-body pt-3">{s.detail}</p>
+                </div>
+              </details>
             ))}
           </div>
         </section>
@@ -159,7 +166,7 @@ export default function BlogPage() {
         <section className="space-y-8">
           <div>
             <h2 className="themed-section-heading">In-Depth Articles</h2>
-            <p className="themed-body-text mt-2">Deep dives — publishing soon.</p>
+            <p className="themed-body-text mt-2">Deep dives and comparison guides.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {ARTICLES.map(({ title, tag, slug, date }) =>

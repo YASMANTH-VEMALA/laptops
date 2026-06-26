@@ -883,24 +883,7 @@ export function LaptopsClient({ laptops }: LaptopsClientProps) {
                   </div>
                 )}
 
-                <div className="mt-5 flex flex-wrap gap-3">
-                  {selectedLocalLaptop.affiliate_amazon_in && (
-                    <a
-                      href={selectedLocalLaptop.affiliate_amazon_in}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex border-2 border-foreground bg-primary px-4 py-2 text-sm font-black text-foreground shadow-[4px_4px_0_var(--foreground)]"
-                    >
-                      Buy on Amazon India
-                    </a>
-                  )}
-                  <a
-                    href={`/laptops/${selectedLocalLaptop.slug}`}
-                    className="inline-flex border-2 border-foreground bg-background px-4 py-2 text-sm font-black text-foreground shadow-[4px_4px_0_var(--foreground)]"
-                  >
-                    Open Dedicated Page
-                  </a>
-                </div>
+                {/* Buttons container removed */}
               </div>
             </div>
           </article>

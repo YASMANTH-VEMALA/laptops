@@ -171,29 +171,29 @@ export default async function BlogPostPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
 
-      <article className="min-h-screen bg-white">
+      <article className="laptick-themed-page min-h-screen">
         {/* Header */}
-        <header className="bg-gray-50 px-4 py-20 sm:px-6 lg:px-8">
+        <header className="px-4 py-12 sm:px-6 lg:px-8 border-b-2 border-foreground/10">
           <div className="max-w-2xl mx-auto">
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-              <Link href="/blog" className="hover:text-blue-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+              <Link href="/blog" className="hover:text-primary font-bold transition-colors">
                 Blog
               </Link>
               <span>/</span>
-              <span>{post.title}</span>
+              <span className="truncate">{post.title}</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+            <h1 className="text-4xl sm:text-5xl font-black text-foreground mb-4 leading-tight">
               {post.title}
             </h1>
-            <p className="text-xl text-gray-600 mb-6">{post.meta_description}</p>
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <p className="text-lg sm:text-xl text-muted-foreground mb-6 font-semibold leading-relaxed">{post.meta_description}</p>
+            <div className="flex flex-wrap gap-4 text-xs font-mono text-muted-foreground uppercase tracking-wider">
               <span>
                 Published{' '}
                 {new Date(post.created_at).toLocaleDateString('en-IN')}
               </span>
               {post.updated_at !== post.created_at && (
                 <span>
-                  Updated {new Date(post.updated_at).toLocaleDateString('en-IN')}
+                  · Updated {new Date(post.updated_at).toLocaleDateString('en-IN')}
                 </span>
               )}
             </div>
@@ -203,14 +203,14 @@ export default async function BlogPostPage({
         {/* Content */}
         <main className="max-w-2xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
           <div
-            className="prose prose-lg max-w-none"
+            className="prose prose-lg max-w-none dark:prose-invert text-foreground prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-ul:text-foreground/90 prose-ol:text-foreground/90 prose-li:text-foreground/90"
             dangerouslySetInnerHTML={{ __html: post.content_html }}
           />
 
           {/* Featured Laptops */}
           {featuredLaptops.length > 0 && (
-            <section className="mt-16 pt-16 border-t-2 border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8">
+            <section className="mt-16 pt-16 border-t-2 border-foreground/15">
+              <h2 className="text-3xl font-black text-foreground mb-8 font-display">
                 Featured Laptops
               </h2>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -218,34 +218,19 @@ export default async function BlogPostPage({
                   <Link
                     key={laptop.id}
                     href={`/laptops/${laptop.slug}`}
-                    className="p-4 border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-lg transition-all"
+                    className="p-5 border-2 border-foreground bg-background shadow-[4px_4px_0_var(--foreground)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--foreground)] transition-all block"
                   >
-                    <h3 className="font-semibold text-gray-900 mb-2">
+                    <h3 className="font-black text-foreground mb-2 leading-tight">
                       {laptop.name}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-3">{laptop.brand}</p>
-                    <p className="text-lg font-bold text-blue-600">
+                    <p className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">{laptop.brand}</p>
+                    <p className="text-xl font-black text-accent">
                       ₹{laptop.price_inr.toLocaleString('en-IN')}
                     </p>
                     {laptop.affiliate_amazon_in && (
-                      <a
-                        href={laptop.affiliate_amazon_in}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-3 text-sm text-white bg-orange-500 hover:bg-orange-600 px-3 py-1 rounded"
-                        onClick={() => {
-                          if (typeof window !== 'undefined' && window.gtag) {
-                            window.gtag.event('affiliate_click', {
-                              event_category: 'monetization',
-                              event_label: laptop.id,
-                              laptop_name: laptop.name,
-                              source: 'blog'
-                            })
-                          }
-                        }}
-                      >
-                        Check Price →
-                      </a>
+                      <span className="inline-block mt-4 text-xs font-black uppercase bg-primary border-2 border-foreground px-3.5 py-1.5 shadow-[2px_2px_0_var(--foreground)] text-foreground">
+                        Buy on Amazon
+                      </span>
                     )}
                   </Link>
                 ))}
@@ -255,8 +240,8 @@ export default async function BlogPostPage({
 
           {/* Related Posts */}
           {relatedPosts.length > 0 && (
-            <section className="mt-16 pt-16 border-t-2 border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8">
+            <section className="mt-16 pt-16 border-t-2 border-foreground/15">
+              <h2 className="text-3xl font-black text-foreground mb-8 font-display">
                 Related Articles
               </h2>
               <div className="space-y-4">
@@ -264,12 +249,12 @@ export default async function BlogPostPage({
                   <Link
                     key={relatedPost.slug}
                     href={`/blog/${relatedPost.slug}`}
-                    className="block p-4 border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all"
+                    className="block p-5 border-2 border-foreground bg-background shadow-[4px_4px_0_var(--foreground)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--foreground)] transition-all"
                   >
-                    <h3 className="font-semibold text-gray-900 hover:text-blue-600">
+                    <h3 className="font-black text-lg text-foreground hover:text-primary leading-snug">
                       {relatedPost.title} →
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground mt-2 font-medium">
                       {relatedPost.meta_description}
                     </p>
                   </Link>
@@ -279,17 +264,18 @@ export default async function BlogPostPage({
           )}
 
           {/* CTA */}
-          <section className="mt-16 pt-16 border-t-2 border-gray-200">
-            <div className="bg-blue-50 rounded-lg p-8 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <section className="mt-16 pt-16 border-t-2 border-foreground/15">
+            <div className="themed-card text-center" style={{ background: '#d9ff3f' }}>
+              <h2 className="text-2xl font-black text-foreground mb-3 font-display">
                 Ready for a Personalized Recommendation?
               </h2>
-              <p className="text-gray-700 mb-6">
+              <p className="text-foreground/90 mb-5 font-semibold text-sm">
                 Answer a few quick questions and get your perfect laptop match.
               </p>
               <Link
-                href="/recommend"
-                className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                href="/find-my-laptop"
+                className="themed-primary-action inline-block"
+                style={{ background: 'hsl(0 0% 2%)', color: '#d9ff3f', width: 'auto', paddingInline: '2rem' }}
               >
                 Get Recommendation →
               </Link>

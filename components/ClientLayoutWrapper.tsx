@@ -78,6 +78,7 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const isAdmin = pathname?.startsWith('/admin')
   const isChat = pathname === '/chat'
+  const isHome = pathname === '/'
 
   if (isAdmin) {
     return <>{children}</>
@@ -85,7 +86,7 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen flex flex-col">
-      <SiteHeader isChat={isChat} />
+      {!isHome && <SiteHeader isChat={isChat} />}
       <main className="flex-1 flex flex-col min-h-0">{children}</main>
       {!isChat && <SiteFooter />}
       <AiAssistant />

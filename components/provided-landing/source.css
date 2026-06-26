@@ -26,25 +26,11 @@
 /* body styles scoped to landing page only */
 
 .exact-animation-home::before {
-  --line: color-mix(in lch, canvasText 45%, transparent);
-  --size: 60px;
-  content: '';
-  height: 100vh;
-  width: 100vw;
-  position: fixed;
-  background: linear-gradient(
-        90deg,
-        var(--line) 1px,
-        transparent 1px var(--size)
-      )
-      50% 50% / var(--size) var(--size),
-    linear-gradient(var(--line) 1px, transparent 1px var(--size)) 50% 50% /
-      var(--size) var(--size);
-  mask: linear-gradient(-15deg, transparent 40%, white);
-  top: 0;
-  transform-style: flat;
-  pointer-events: none;
-  z-index: -1;
+  display: none !important;
+}
+
+.exact-animation-home:not(.exact-animation-home-landing)::before {
+  display: none !important;
 }
 
 .exact-animation-home footer {
@@ -54,32 +40,33 @@
   text-align: center;
 }
 
-.exact-animation-home h1 {
+.exact-animation-home-landing h1 {
 	font-size: clamp(2rem, 5vw + 1rem, 8rem);
 	font-family: "EB Garamond", serif;
 	line-height: 0.9;
 	font-weight: 500;
-	translate: 0 -100%;
+	translate: 0 -40%;
 	margin: 0;
 }
 
-.exact-animation-home h1 span {
+.exact-animation-home-landing h1 span {
 	font-variant: small-caps;
 	font-size: 0.5em;
 }
 
 /* Header section */
-.exact-animation-home header {
-  height: 100vh;
+.exact-animation-home-landing header {
+  height: calc(100vh - 100px);
   position: absolute;
   padding: 2rem;
   width: 800px;
   max-width: calc(100% - 4rem);
   left: 50%;
-  top: 0;
+  top: 100px;
   translate: -50% 0;
   display: grid;
   align-content: center;
+  z-index: 3;
 }
 
 .sr-only {
@@ -132,6 +119,10 @@
   place-items: center;
   overflow: hidden;
   height: 100vh;
+  background:
+    radial-gradient(circle at 12% 10%, rgb(217 255 63 / 0.45), transparent 24rem),
+    radial-gradient(circle at 88% 16%, rgb(0 213 255 / 0.22), transparent 22rem),
+    #fbfbf4;
 }
 
 .laptop .scene {
@@ -532,6 +523,14 @@
   transform: translate3d(0, 0, calc(-1vmin - 1px));
 }
 
+body:has(.exact-animation-home) {
+  background-color: #fbfbf4 !important;
+  background-image:
+    radial-gradient(circle at 12% 10%, rgb(217 255 63 / 0.45), transparent 24rem),
+    radial-gradient(circle at 88% 16%, rgb(0 213 255 / 0.22), transparent 22rem) !important;
+  background-attachment: fixed !important;
+}
+
 .laptick-normal-site {
   background:
     radial-gradient(circle at 12% 10%, rgb(217 255 63 / 0.45), transparent 24rem),
@@ -544,9 +543,16 @@
   padding: clamp(1rem, 2vw, 2rem);
   position: relative;
   z-index: 5;
+}
+
+.exact-animation-home:not(.exact-animation-home-landing) .laptick-normal-site {
+  background: transparent !important;
+}
+
+.exact-animation-home-landing .laptick-normal-site {
   animation: laptick-site-scroll-up both linear;
   animation-timeline: scroll(root);
-  animation-range: 285vh 300vh;
+  animation-range: 220vh 300vh;
 }
 
 @keyframes laptick-site-scroll-up {
@@ -560,7 +566,7 @@
   }
 }
 
-body:not(.laptick-site-mode) .laptick-normal-site {
+body:not(.laptick-site-mode) .exact-animation-home-landing .laptick-normal-site {
   opacity: 0;
   pointer-events: none;
 }
@@ -819,6 +825,20 @@ body.laptick-site-mode .laptick-normal-site {
   pointer-events: auto;
 }
 
+body.laptick-transitioning .laptick-normal-site {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+  transform: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+  z-index: 9999 !important;
+}
+
 /* Education Section */
 .education-section {
   padding: clamp(3rem, 8vw, 6rem) clamp(1rem, 2vw, 2rem);
@@ -856,7 +876,7 @@ body.laptick-site-mode .laptick-normal-site {
 .education-grid {
   display: grid;
   gap: 1.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   max-width: 1400px;
   margin: 0 auto 3rem;
 }
