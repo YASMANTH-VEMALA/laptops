@@ -9,6 +9,7 @@ const LINKS = [
   { href: '/chat', label: 'Chat with AI' },
   { href: '/laptops', label: 'All Laptops' },
   { href: '/blog', label: 'Buying Guides' },
+  { href: '/faq', label: 'FAQ' },
   { href: '/understanding', label: 'Understanding' },
   { href: '/about', label: 'About' },
 ]

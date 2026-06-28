@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: '/chat', label: 'Chat with AI' },
   { href: '/laptops', label: 'Laptops' },
   { href: '/blog', label: 'Buying Guides' },
+  { href: '/faq', label: 'FAQ' },
   { href: '/understanding', label: 'Understanding' },
   { href: '/about', label: 'About' },
 ]

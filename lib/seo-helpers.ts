@@ -1,3 +1,5 @@
+import { SITE_URL, absoluteUrl } from '@/lib/site'
+
 // SEO helper functions
 export function generateSlug(text: string): string {
   return text
@@ -22,7 +24,7 @@ export function generateProductSchema(laptop: {
     '@context': 'https://schema.org/',
     '@type': 'Product',
     name: laptop.name,
-    image: laptop.image_url || 'https://laptick.in/api/og/laptop/' + laptop.slug,
+    image: laptop.image_url || absoluteUrl(`/api/og/laptop/${laptop.slug}`),
     description: laptop.pros?.substring(0, 200) || `High-performance ${laptop.brand} laptop`,
     brand: {
       '@type': 'Brand',
@@ -66,18 +68,14 @@ export function generateOrganizationSchema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Laptop Advisor',
-    url: 'https://laptick.in',
-    logo: 'https://laptick.in/logo.png',
-    description: "India's most trusted AI-powered laptop recommendation engine",
-    sameAs: [
-      'https://twitter.com/laptickadvisor',
-      'https://linkedin.com/company/laptop-advisor'
-    ],
+    name: 'Laptick',
+    url: SITE_URL,
+    logo: absoluteUrl('/logo.png'),
+    description: "India's AI-powered laptop recommendation engine",
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'Customer Support',
-      email: 'support@laptick.in'
+      email: 'support@laptick.com'
     }
   }
 }
@@ -96,16 +94,16 @@ export function generateBlogPostingSchema(blog: {
     '@type': 'BlogPosting',
     headline: blog.title,
     description: blog.meta_description,
-    image: blog.image_url || `https://laptick.in/api/og/blog/${blog.slug}`,
+    image: blog.image_url || absoluteUrl(`/api/og/blog/${blog.slug}`),
     datePublished: blog.created_at,
     dateModified: blog.updated_at,
     author: {
       '@type': 'Organization',
-      name: 'Laptop Advisor'
+      name: 'Laptick'
     },
     articleBody: blog.content_html
       ? blog.content_html.replace(/<[^>]*>/g, '').substring(0, 1000)
-      : 'Read the full article on Laptop Advisor'
+      : 'Read the full article on Laptick'
   }
 }
 

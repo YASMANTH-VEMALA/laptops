@@ -53,6 +53,11 @@ function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/faq" className="hover:text-primary">
+                  Laptop Buying FAQ
+                </Link>
+              </li>
+              <li>
                 <Link href="/about" className="hover:text-primary">
                   About
                 </Link>

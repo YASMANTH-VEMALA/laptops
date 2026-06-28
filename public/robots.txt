@@ -4,4 +4,4 @@ Disallow: /api/
 Disallow: /admin/
 Disallow: /result
 
-Sitemap: https://laptick.in/sitemap.xml
+Sitemap: https://www.laptick.com/sitemap.xml

@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { getServiceClient } from '@/lib/supabase'
 import { generateBlogPostingSchema } from '@/lib/seo-helpers'
 import Link from 'next/link'
+import { absoluteUrl } from '@/lib/site'
 
 const getSupabase = () => getServiceClient()
 
@@ -57,11 +58,11 @@ export async function generateMetadata({
       type: 'article',
       publishedTime: post.created_at,
       modifiedTime: post.updated_at,
-      authors: ['Laptop Advisor'],
-      url: `https://laptick.com/blog/${post.slug}`,
+      authors: ['Laptick'],
+      url: absoluteUrl(`/blog/${post.slug}`),
       images: [
         {
-          url: post.image_url || `https://laptick.com/api/og/blog/${post.slug}`,
+          url: post.image_url || absoluteUrl(`/api/og/blog/${post.slug}`),
           width: 1200,
           height: 630,
           alt: post.title
@@ -72,20 +73,25 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: post.title,
       description: post.meta_description,
-      images: [post.image_url || `https://laptick.com/api/og/blog/${post.slug}`]
+      images: [post.image_url || absoluteUrl(`/api/og/blog/${post.slug}`)]
     }
   }
 }
 
 export async function generateStaticParams() {
-  const { data: posts } = await getSupabase()
-    .from('blog_posts')
-    .select('slug')
-    .eq('published', true)
+  try {
+    const { data: posts } = await getSupabase()
+      .from('blog_posts')
+      .select('slug')
+      .eq('published', true)
 
-  return (posts || []).map(post => ({
-    slug: post.slug
-  }))
+    return (posts || []).map(post => ({
+      slug: post.slug
+    }))
+  } catch (error) {
+    console.warn('Skipping blog static params; Supabase env vars are not configured.', error)
+    return []
+  }
 }
 
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
@@ -168,7 +174,7 @@ export default async function BlogPostPage({
       {/* JSON-LD Schema */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
       />
 
       <article className="laptick-themed-page min-h-screen">

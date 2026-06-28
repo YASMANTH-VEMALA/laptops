@@ -10,8 +10,66 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import type { Laptop } from '@/types/laptop'
 import { generateProductSchema, generateBreadcrumbSchema } from '@/lib/seo-helpers'
+import { SITE_URL, absoluteUrl } from '@/lib/site'
 
 export const dynamic = 'force-dynamic'
+
+const USE_LABELS: Record<string, string> = {
+  'video-editing': 'Video Editing',
+  programming: 'Coding',
+  gaming: 'Gaming',
+  general: 'General',
+  business: 'Business',
+  'ai-ml': 'AI / ML',
+  design: 'Design',
+  content: 'Content Creator',
+  students: 'Students',
+}
+
+const USE_CASE_GUIDES: Record<string, { href: string; title: string; description: string }> = {
+  students: {
+    href: '/blog/best-laptop-for-students-under-60k-india-2026',
+    title: 'Best laptops for students in India',
+    description: 'Battery, weight, RAM, and budget advice for college buyers.',
+  },
+  gaming: {
+    href: '/blog/best-gaming-laptop-under-120000-india',
+    title: 'Best gaming laptops under Rs. 1,20,000',
+    description: 'GPU TGP, thermals, and refresh rate explained for Indian gamers.',
+  },
+  programming: {
+    href: '/blog/best-laptop-for-programming-india',
+    title: 'Best laptops for programming',
+    description: 'CPU class, RAM, SSD, keyboard, and developer workflow tradeoffs.',
+  },
+  'video-editing': {
+    href: '/blog/best-laptops-for-video-editing-under-100k-india-2026',
+    title: 'Best laptops for video editing',
+    description: 'GPU, VRAM, display color, and storage picks for creator workflows.',
+  },
+}
+
+function getPrimaryUseCase(laptop: Laptop) {
+  return laptop.best_for?.find((tag) => tag !== 'general') || laptop.best_for?.[0] || 'general'
+}
+
+function getLaptopSeoSummary(laptop: Laptop) {
+  const primaryUseCase = getPrimaryUseCase(laptop)
+  const useCaseLabel = USE_LABELS[primaryUseCase] || 'Laptop Buyers'
+  const gpuPart = laptop.gpu_type === 'dedicated' ? `${laptop.gpu_model} ${laptop.gpu_tgp_watts}W` : 'integrated graphics'
+  const specParts = [
+    laptop.cpu_model,
+    gpuPart,
+    `${laptop.ram_gb}GB RAM`,
+    `${laptop.display_size}" ${laptop.display_type}`,
+  ].filter(Boolean)
+
+  return {
+    primaryUseCase,
+    useCaseLabel,
+    specLine: specParts.join(', '),
+  }
+}
 
 async function getLaptop(slug: string): Promise<Laptop | null> {
   const supabase = getServiceClient()
@@ -39,16 +97,20 @@ export async function generateMetadata({
     maximumFractionDigits: 0,
   }).format(laptop.price_inr)
 
+  const { primaryUseCase, useCaseLabel, specLine } = getLaptopSeoSummary(laptop)
+  const description = `${laptop.name} at ${price} in India. ${specLine}. Best for ${useCaseLabel.toLowerCase()}. ${laptop.pros}`.slice(0, 158)
+  const titleSpec = laptop.gpu_type === 'dedicated' ? laptop.gpu_model : laptop.cpu_model
+
   return {
-    title: `${laptop.name} Review & Price in India (2026)`,
-    description: `${laptop.name} at ${price} on Amazon India. ${laptop.pros.slice(0, 120)}`,
-    keywords: [laptop.brand, laptop.name, 'laptop', 'price', 'india'],
+    title: `${laptop.name} ${titleSpec} - Best for ${useCaseLabel}`,
+    description,
+    keywords: [laptop.brand, laptop.name, `${laptop.name} price`, `${useCaseLabel} laptop India`, primaryUseCase, 'laptop recommendation India'],
     openGraph: {
-      title: `${laptop.name} Review & Price in India (2026)`,
-      description: `${laptop.name} at ${price} on Amazon India`,
+      title: `${laptop.name} - ${useCaseLabel} Laptop in India`,
+      description,
       images: [
         {
-          url: `https://laptick.in/api/og/laptop/${slug}`,
+          url: absoluteUrl(`/api/og/laptop/${slug}`),
           width: 1200,
           height: 630,
           alt: laptop.name
@@ -57,9 +119,9 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${laptop.name} Review & Price`,
-      description: `${laptop.name} at ${price}`,
-      images: [`https://laptick.in/api/og/laptop/${slug}`]
+      title: `${laptop.name} - Best for ${useCaseLabel}`,
+      description,
+      images: [absoluteUrl(`/api/og/laptop/${slug}`)]
     }
   }
 }
@@ -97,23 +159,27 @@ export default async function LaptopPage({
     { label: 'Weight', value: `${laptop.weight_kg}kg` },
   ]
 
-  const USE_LABELS: Record<string, string> = {
-    'video-editing': 'Video Editing',
-    programming: 'Coding',
-    gaming: 'Gaming',
-    general: 'General',
-    business: 'Business',
-    'ai-ml': 'AI / ML',
-    design: 'Design',
-    content: 'Content Creator',
-    students: 'Students',
-  }
+  const { primaryUseCase, useCaseLabel, specLine } = getLaptopSeoSummary(laptop)
+  const primaryGuide = USE_CASE_GUIDES[primaryUseCase]
+  const relatedGuideCandidates = [
+    primaryGuide,
+    laptop.gpu_type === 'dedicated' ? USE_CASE_GUIDES.gaming : undefined,
+    laptop.best_for.includes('programming') ? USE_CASE_GUIDES.programming : undefined,
+    laptop.best_for.includes('students') ? USE_CASE_GUIDES.students : undefined,
+    { href: '/faq', title: 'Laptop buying FAQ', description: 'Answers on RAM, CPU, GPU TGP, displays, and budgets.' },
+  ]
+  const learnMoreLinks = relatedGuideCandidates.reduce<Array<{ href: string; title: string; description: string }>>((links, link) => {
+    if (link && !links.some((item) => item.href === link.href)) {
+      links.push(link)
+    }
+    return links
+  }, [])
 
   const productSchema = generateProductSchema(laptop)
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://laptick.in' },
-    { name: 'All Laptops', url: 'https://laptick.in/laptops' },
-    { name: laptop.name, url: `https://laptick.in/laptops/${laptop.slug}` }
+    { name: 'Home', url: SITE_URL },
+    { name: 'All Laptops', url: absoluteUrl('/laptops') },
+    { name: laptop.name, url: absoluteUrl(`/laptops/${laptop.slug}`) }
   ])
 
   return (
@@ -121,11 +187,11 @@ export default async function LaptopPage({
       {/* Schema Markup */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema).replace(/</g, '\\u003c') }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, '\\u003c') }}
       />
 
       <article className="laptop-detail-page mx-auto max-w-6xl px-4 py-5 sm:px-6 lg:px-8 space-y-6">
@@ -159,6 +225,9 @@ export default async function LaptopPage({
           <div>
             <Badge variant="secondary" className="mb-3 rounded-none border-2 border-foreground bg-primary text-xs font-black text-foreground">{laptop.brand}</Badge>
             <h1 className="font-display text-[clamp(2.8rem,6vw,6rem)] font-extrabold leading-[0.8] tracking-normal">{laptop.name}</h1>
+            <p className="mt-3 text-sm font-black uppercase tracking-[0.16em] text-muted-foreground">
+              Best for {useCaseLabel} - {specLine}
+            </p>
             <p className="mt-4 text-4xl font-black text-accent">
               {formatPrice(laptop.price_inr)}
             </p>
@@ -240,6 +309,23 @@ export default async function LaptopPage({
               : 'TN panels are the cheapest but have poor colour accuracy and narrow viewing angles — acceptable for pure gaming at high Hz.'}
             {laptop.display_hz >= 120 ? ` ${laptop.display_hz}Hz makes scrolling and gaming visibly smoother than 60Hz — you notice the difference immediately.` : ' 60Hz is standard and sufficient for most non-gaming tasks.'}
           </p>
+        </div>
+      </section>
+
+      {/* Related guides */}
+      <section className="border-2 border-foreground bg-background p-5 shadow-[6px_6px_0_var(--foreground)]">
+        <h2 className="mb-4 font-display text-5xl font-extrabold leading-none">Learn More Before You Buy</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {learnMoreLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="block border-2 border-foreground bg-secondary p-4 shadow-[4px_4px_0_var(--foreground)] transition hover:-translate-y-0.5"
+            >
+              <p className="text-base font-black text-foreground">{link.title}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{link.description}</p>
+            </Link>
+          ))}
         </div>
       </section>
 

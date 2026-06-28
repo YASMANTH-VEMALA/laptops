@@ -4,6 +4,7 @@ import Script from 'next/script'
 import './globals.css'
 import { generateOrganizationSchema } from '@/lib/seo-helpers'
 import { ClientLayoutWrapper } from '@/components/ClientLayoutWrapper'
+import { SITE_URL } from '@/lib/site'
 
 const interSans = Inter({ variable: '--font-sans', subsets: ['latin'] })
 const garamond = EB_Garamond({ variable: '--font-display', subsets: ['latin'] })
@@ -11,18 +12,34 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 
 export const metadata: Metadata = {
   title: {
-    default: 'Laptick — Find Your Perfect Laptop in India',
+    default: 'Laptick - Get Perfect Laptop Recommendations in India',
     template: '%s | Laptick',
   },
   description:
-    'AI-powered laptop recommendations for students, developers, creators and gamers in India. Get expert advice with real specs explained simply. Free, no signup.',
-  keywords: ['best laptop India', 'laptop buying guide', 'laptop recommendations India 2026'],
-  metadataBase: new URL('https://laptick.in'),
+    'AI-powered laptop recommendations for students, developers, creators and gamers in India. Compare real specs, prices, and buying guides. Free, no signup.',
+  keywords: ['best laptop India', 'laptop buying guide India', 'laptop recommendations India 2026', 'best laptop recommendation India'],
+  metadataBase: new URL(SITE_URL),
   openGraph: {
+    title: 'Laptick - Laptop Recommendations in India',
+    description: 'AI-powered laptop recommendations, buying guides, and real spec explanations for Indian buyers.',
     type: 'website',
     locale: 'en_IN',
-    url: 'https://laptick.in',
+    url: SITE_URL,
     siteName: 'Laptick',
+    images: [
+      {
+        url: '/laptick-search-preview.png',
+        width: 1200,
+        height: 1200,
+        alt: 'Laptick laptop recommendation logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Laptick - Laptop Recommendations in India',
+    description: 'AI-powered laptop recommendations, buying guides, and real spec explanations for Indian buyers.',
+    images: ['/laptick-search-preview.png'],
   },
 }
 
