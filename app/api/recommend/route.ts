@@ -110,9 +110,9 @@ export async function POST(req: NextRequest) {
 
     // Construct recommendation result formatted to match expected schema of recommendation_cache
     const top3Ranked = result.products.slice(0, 3).map((prod: any, idx: number) => {
-      const cpu = prod.specs?.cpu || 'Performance processor'
-      const ram = prod.specs?.ram ? `${prod.specs.ram} RAM` : 'Ample memory'
-      const storage = prod.specs?.storage || 'Fast SSD'
+      const cpu = prod.specs?.cpu || prod.cpu_series ? `${prod.cpu_series} CPU` : 'Performance processor'
+      const ram = prod.specs?.ram || prod.ram_gb ? `${prod.ram_gb}GB RAM` : 'Ample memory'
+      const storage = prod.specs?.storage || prod.storage_gb ? `${prod.storage_gb}GB SSD` : 'Fast SSD'
       return {
         rank: (idx + 1) as 1 | 2 | 3,
         laptop_id: prod.id,
@@ -124,6 +124,11 @@ export async function POST(req: NextRequest) {
         use_case_fit_score: prod.rating ? Math.round(prod.rating * 2) : 8,
       }
     })
+
+    // If no products, return empty but valid response instead of error
+    if (result.products.length === 0) {
+      console.warn('[/api/recommend] No products found for query:', rawQuery)
+    }
 
     const recommendationResponse = {
       result: {

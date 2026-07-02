@@ -162,12 +162,19 @@ export async function searchPipeline(
       general: ['general']
     }
     const targetTags = useCaseMap[normalized.use_case] || ['general']
-    const useCaseFiltered = filtered.filter(l => 
+    const useCaseFiltered = filtered.filter(l =>
       l.best_for?.some((tag: string) => targetTags.includes(tag.toLowerCase()))
     )
-    if (useCaseFiltered.length >= 3) {
+    // Only apply use case filter if we get at least 1 result; otherwise keep all filtered
+    if (useCaseFiltered.length > 0) {
       filtered = useCaseFiltered
     }
+  }
+
+  // If no laptops remain after filtering, fallback to all active laptops sorted by price
+  if (filtered.length === 0) {
+    console.log('[search-pipeline] No laptops matched filters, falling back to top-rated by price...')
+    filtered = allLaptops || []
   }
 
   // Map filtered laptops to mock specs score for rankAndSlice
@@ -198,8 +205,9 @@ export async function searchPipeline(
     }
   })
 
-  // Rank and slice top 5
-  const rankedIds = rankAndSlice(productsWithMeta, normalized.budget_max, 5)
+  // Rank and slice top 5 (or less if fewer laptops available)
+  const topCount = Math.min(5, productsWithMeta.length)
+  const rankedIds = rankAndSlice(productsWithMeta, normalized.budget_max, topCount)
 
   // Store cache hit mapping
   await setCacheHit(hash, normalized, rawQuery, rankedIds)

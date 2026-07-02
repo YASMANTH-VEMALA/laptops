@@ -105,7 +105,8 @@ function formatProductsAsContext(products: any[]): string {
  */
 async function generateChatResponse(
   messages: ChatMessage[],
-  productContext?: string
+  productContext?: string,
+  warning?: string
 ): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
@@ -120,8 +121,9 @@ async function generateChatResponse(
 - Always verify specs before recommending
 
 ${productContext ? `\n## Relevant Laptops Available:\n${productContext}` : ''}
+${warning || ''}
 
-Keep responses concise (2-4 paragraphs max) unless asked for detail. Use bullet points for specs.`
+Keep responses concise (2-4 paragraphs max) unless asked for detail. Use bullet points for specs. Always provide helpful guidance even if exact matches aren't available.`
 
   const ai = new GoogleGenAI({ apiKey })
 
@@ -208,6 +210,7 @@ export async function POST(req: NextRequest) {
   try {
     const latestUserMsg = messages.filter((m) => m.role === 'user').pop()
     let productContext: string | undefined = undefined
+    let noResultsWarning = ''
 
     // If asking for recommendations, fetch from search pipeline
     if (latestUserMsg && shouldSearch(latestUserMsg.content)) {
@@ -216,10 +219,13 @@ export async function POST(req: NextRequest) {
 
       if (result.products.length > 0) {
         productContext = formatProductsAsContext(result.products)
+      } else {
+        // No products found — guide user to adjust search
+        noResultsWarning = '\n[NOTE: No laptops matched the exact criteria. Help the user adjust their search — suggest trying a higher budget, different use case, or a different brand.]'
       }
     }
 
-    const reply = await generateChatResponse(messages, productContext)
+    const reply = await generateChatResponse(messages, productContext, noResultsWarning)
     return NextResponse.json({ reply })
   } catch (err: any) {
     console.error('[/api/chat] Error:', err)
