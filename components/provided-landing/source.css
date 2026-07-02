@@ -129,6 +129,16 @@
   transform: rotateX(-24deg) rotateY(-32deg) rotateX(90deg) translate3d(0, 0, -20vmin);
 }
 
+/* three.js laptop mount (fills the sticky viewport section) */
+#laptop3d-slot {
+  position: absolute;
+  inset: 0;
+}
+
+#laptop3d-slot canvas {
+  display: block;
+}
+
 .exact-animation-home main {
 	view-timeline: --main;
 }
@@ -538,11 +548,41 @@ body:has(.exact-animation-home) {
     #fbfbf4;
   color: var(--black);
   display: grid;
-  gap: clamp(2rem, 5vw, 5rem);
-  min-height: calc(100vh + 240px);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1rem;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
   padding: clamp(1rem, 2vw, 2rem);
   position: relative;
   z-index: 5;
+}
+
+/* Collapsible header: hides once the user starts typing / chatting */
+.landing-nav-wrap {
+  max-height: 70vh;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.45s ease, opacity 0.3s ease;
+}
+
+body.laptick-chat-active .landing-nav-wrap {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#landing-chat-slot {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Only one "Laptick" logo at a time: the chat's own logo appears
+   after the site header collapses */
+body:not(.laptick-chat-active) #landing-chat-slot .site-logo {
+  visibility: hidden;
 }
 
 .exact-animation-home:not(.exact-animation-home-landing) .laptick-normal-site {
@@ -594,6 +634,39 @@ body:not(.laptick-site-mode) .exact-animation-home-landing .laptick-normal-site 
   color: var(--black);
   font-weight: 850;
   text-decoration: none;
+}
+
+.site-nav-links {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-left: 2rem;
+}
+
+/* hamburger only exists on mobile */
+.landing-menu-checkbox {
+  display: none;
+}
+
+.landing-menu-button {
+  background: white;
+  border: 2px solid var(--black);
+  box-shadow: 3px 3px 0 var(--black);
+  cursor: pointer;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 7px;
+}
+
+.landing-menu-button span {
+  background: var(--black);
+  display: block;
+  height: 3px;
+  width: 20px;
 }
 
 .normal-hero {
@@ -817,7 +890,7 @@ body.laptick-site-mode .shell--bottom {
 }
 
 body.laptick-site-mode .laptick-normal-site {
-  min-height: calc(100vh + 240px);
+  min-height: 100vh;
   scroll-margin-top: 0;
   animation: none;
   transform: none;
@@ -1054,9 +1127,35 @@ body.laptick-transitioning .laptick-normal-site {
     grid-template-columns: 1fr;
   }
 
+  /* compact header with hamburger menu */
   .site-nav {
-    align-items: flex-start;
+    box-shadow: 4px 4px 0 var(--black);
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .site-nav strong {
+    font-size: 1.05rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .landing-menu-button {
+    display: flex;
+    margin-left: auto;
+  }
+
+  .site-nav-links {
+    display: none;
+    flex-basis: 100%;
     flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+    margin-left: 0;
+    padding: 0.85rem 0.25rem 0.35rem;
+  }
+
+  .landing-menu-checkbox:checked ~ .site-nav-links {
+    display: flex;
   }
 
   .laptick-screen-face {

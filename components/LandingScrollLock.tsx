@@ -52,8 +52,13 @@ export function LandingScrollLock() {
       })
     }
 
+    // Gestures inside the embedded chat must scroll the chat's own message
+    // log, not fight the page lock (its container uses overscroll-contain).
+    const isInsideChat = (target: EventTarget | null) =>
+      target instanceof Element && target.closest('#landing-chat-slot') !== null
+
     const handleWheel = (event: WheelEvent) => {
-      if (!locked) return
+      if (!locked || isInsideChat(event.target)) return
 
       const nextLockY = getLockY()
       if (event.deltaY < 0 && window.scrollY + event.deltaY <= nextLockY + 2) {
@@ -67,7 +72,7 @@ export function LandingScrollLock() {
     }
 
     const handleTouchMove = (event: TouchEvent) => {
-      if (!locked) return
+      if (!locked || isInsideChat(event.target)) return
 
       const touchY = event.touches[0]?.clientY ?? lastTouchY
       const deltaY = lastTouchY - touchY

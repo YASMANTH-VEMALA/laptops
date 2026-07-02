@@ -8,6 +8,8 @@ import type { Laptop } from '@/types/laptop'
 
 interface AiChatClientProps {
   laptops: Laptop[]
+  /** Fires with true once the user types or a conversation is underway (used by the landing embed to hide the site header). */
+  onActivityChange?: (active: boolean) => void
 }
 
 type ChatMessage = {
@@ -75,7 +77,7 @@ const SUGGESTIONS = [
   'Premium laptop with OLED display',
 ]
 
-export function AiChatClient({ laptops }: AiChatClientProps) {
+export function AiChatClient({ laptops, onActivityChange }: AiChatClientProps) {
   // Chat States
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -167,6 +169,11 @@ export function AiChatClient({ laptops }: AiChatClientProps) {
   }, [messages, loading, scrollToBottom])
 
   const hasStartedChatting = messages.length > 1 || loading
+
+  const chatActive = hasStartedChatting || input.trim().length > 0
+  useEffect(() => {
+    onActivityChange?.(chatActive)
+  }, [chatActive, onActivityChange])
 
   // Extract budget logic
   function extractBudget(text: string) {
@@ -550,10 +557,10 @@ export function AiChatClient({ laptops }: AiChatClientProps) {
     <div
       key={`local-${laptop.id}`}
       onClick={() => setSelectedLocalLaptop(laptop)}
-      className="flex-none w-[260px] border-2 border-foreground bg-white shadow-[4px_4px_0_var(--foreground)] rounded-xl overflow-hidden flex flex-col justify-between hover:translate-y-[-2px] hover:shadow-[6px_6px_0_var(--foreground)] transition-all cursor-pointer"
+      className="flex-none w-[215px] sm:w-[260px] border-2 border-foreground bg-white shadow-[4px_4px_0_var(--foreground)] rounded-xl overflow-hidden flex flex-col justify-between hover:translate-y-[-2px] hover:shadow-[6px_6px_0_var(--foreground)] transition-all cursor-pointer"
     >
       <div>
-        <div className="w-full h-36 bg-zinc-100 flex items-center justify-center overflow-hidden border-b-2 border-foreground">
+        <div className="w-full h-28 sm:h-36 bg-zinc-100 flex items-center justify-center overflow-hidden border-b-2 border-foreground">
           {laptop.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={laptop.image_url} alt={laptop.name} className="object-contain h-full w-full p-2" />
@@ -590,11 +597,11 @@ export function AiChatClient({ laptops }: AiChatClientProps) {
     <div
       key={`web-${webLaptop.product_id || webLaptop.position}`}
       onClick={() => setSelectedWebResult(webLaptop)}
-      className="flex-none w-[260px] border-2 border-foreground bg-white shadow-[4px_4px_0_var(--foreground)] rounded-xl overflow-hidden flex flex-col justify-between hover:translate-y-[-2px] hover:shadow-[6px_6px_0_var(--foreground)] transition-all cursor-pointer animate-fade-in"
+      className="flex-none w-[215px] sm:w-[260px] border-2 border-foreground bg-white shadow-[4px_4px_0_var(--foreground)] rounded-xl overflow-hidden flex flex-col justify-between hover:translate-y-[-2px] hover:shadow-[6px_6px_0_var(--foreground)] transition-all cursor-pointer animate-fade-in"
       style={{ borderColor: '#00d5ff' }}
     >
       <div>
-        <div className="w-full h-36 bg-zinc-100 flex items-center justify-center overflow-hidden border-b-2 border-foreground" style={{ borderBottomColor: '#00d5ff' }}>
+        <div className="w-full h-28 sm:h-36 bg-zinc-100 flex items-center justify-center overflow-hidden border-b-2 border-foreground" style={{ borderBottomColor: '#00d5ff' }}>
           {webLaptop.thumbnail ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={webLaptop.thumbnail} alt={webLaptop.title} className="object-contain h-full w-full p-2" />
@@ -652,21 +659,21 @@ export function AiChatClient({ laptops }: AiChatClientProps) {
             const hasLaptops = isBot && ((message.localLaptops && message.localLaptops.length > 0) || (message.webResults && message.webResults.length > 0))
             return (
               <div key={message.id} className="space-y-3">
-                <div className={`flex gap-3 max-w-[85%] ${isBot ? '' : 'ml-auto flex-row-reverse'}`}>
+                <div className={`flex gap-2 sm:gap-3 max-w-[92%] sm:max-w-[85%] ${isBot ? '' : 'ml-auto flex-row-reverse'}`}>
                   {/* Avatar */}
-                  <div className={`flex h-8 w-8 shrink-0 select-none items-center justify-center border-2 border-foreground ${
+                  <div className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 select-none items-center justify-center border-2 border-foreground ${
                     isBot ? 'bg-[#ccff33] text-foreground' : 'bg-primary/20 text-foreground'
                   }`}>
                     {isBot ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
                   </div>
 
                   {/* Content Bubble */}
-                  <div className={`px-4 py-2.5 border-2 border-foreground leading-relaxed shadow-[3px_3px_0_var(--foreground)] rounded-2xl ${
+                  <div className={`px-3.5 py-2 sm:px-4 sm:py-2.5 border-2 border-foreground leading-relaxed shadow-[3px_3px_0_var(--foreground)] rounded-2xl ${
                     isBot ? 'bg-white/75 backdrop-blur-sm text-foreground' : 'bg-white/95 text-foreground'
                   }`}>
-                    <div 
-                      dangerouslySetInnerHTML={{ __html: formatContent(message.content) }} 
-                      className="space-y-1.5 text-sm"
+                    <div
+                      dangerouslySetInnerHTML={{ __html: formatContent(message.content) }}
+                      className="space-y-1.5 text-[13px] sm:text-sm"
                     />
                   </div>
                 </div>
@@ -674,7 +681,7 @@ export function AiChatClient({ laptops }: AiChatClientProps) {
                 {/* Inline Laptops Row specific to this message */}
                 {hasLaptops && (
                   <div className="w-full -mx-4 sm:-mx-6 lg:-mx-7 animate-fade-in overflow-hidden">
-                    <div className="flex flex-row overflow-x-auto gap-4 pb-2 no-scrollbar pl-[60px] pr-4 sm:pl-[76px] sm:pr-6 lg:pl-[80px] lg:pr-7">
+                    <div className="flex flex-row overflow-x-auto gap-3 sm:gap-4 pb-2 no-scrollbar pl-4 pr-4 sm:pl-[76px] sm:pr-6 lg:pl-[80px] lg:pr-7">
                       {message.localLaptops?.map(renderLaptopCard)}
                       {message.webResults?.map(renderWebLaptopCard)}
                     </div>
